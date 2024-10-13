@@ -1,0 +1,9 @@
+[submodule "SPSCQueue"]
+	path = SPSCQueue
+	url = git@github.com:rigtorp/SPSCQueue.git
+[submodule "hat-trie"]
+	path = hat-trie
+	url = git@github.com:Tessil/hat-trie.git
+[submodule "variant"]
+	path = variant
+	url = git@github.com:mpark/variant.git

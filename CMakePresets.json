@@ -1,0 +1,75 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "clang-toolchain",
+            "displayName": "Clang and libc++",
+            "binaryDir": "build/clang/${presetName}",
+            "hidden" : true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cc",
+                "CMAKE_CXX_COMPILER": "c++",
+                "CMAKE_EXE_LINKER_FLAGS_INIT": "-fuse-ld=lld",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+	        }
+	    },
+        {
+            "name": "gnu-cli-develop",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_FLAGS": "-fdiagnostics-color=always",
+                "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
+                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g -Wall -fsanitize=undefined,address",
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g -Wall -fsanitize=undefined,address",
+                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -flto -Wall",
+                "CMAKE_C_FLAGS_RELEASE": "-O3 -flto -Wall",
+                "CMAKE_EXE_LINKER_FLAGS_RELEASE": "-flto",
+                "CMAKE_EXE_LINKER_FLAGS_DEBUG": "-fsanitize=undefined,address",
+                "LOXXY_TESTING": "ON"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "generator": "Ninja",
+	        "inherits": ["clang-toolchain", "gnu-cli-develop"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+	        }
+        },
+
+        {
+            "name": "opt",
+            "displayName": "Optimized",
+            "generator": "Ninja",
+            "inherits": ["clang-toolchain", "gnu-cli-develop"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "configurePreset": "debug"
+        },
+        {
+            "name": "opt",
+            "displayName": "Optimized",
+            "configurePreset": "opt"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "configurePreset": "debug"
+        },
+        {
+            "name": "opt",
+            "displayName": "Optimized",
+            "configurePreset": "opt"
+        }
+    ]
+}
