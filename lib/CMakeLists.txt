@@ -8,12 +8,28 @@ target_sources(string_store
             utils/string_store.cpp
 )
 
+
 add_library(stupid_type_traits)
 target_sources(stupid_type_traits
     PUBLIC
         FILE_SET CXX_MODULES FILES
             utils/stupid_type_traits.cpp
 )
+
+add_library(variant)
+target_sources(variant
+    PUBLIC
+        FILE_SET CXX_MODULES FILES
+            utils/variant.cpp
+)
+target_link_libraries(variant PRIVATE stupid_type_traits)
+
+if(LOXXY_STD_VARIANT)
+    target_compile_definitions(variant PRIVATE STD_VARIANT)
+else()
+    target_link_libraries(variant PRIVATE mpark_variant)
+endif()
+
 
 add_library(murmurhash)
 target_sources(murmurhash
@@ -43,7 +59,13 @@ target_sources(ast
             ast/hash.cpp
             ast/type_traits.cpp
 )
-target_link_libraries(ast PRIVATE stupid_type_traits string_store murmurhash)
+target_link_libraries(ast
+    PRIVATE
+        stupid_type_traits
+        string_store
+        murmurhash
+        variant
+)
 
 add_library(ast_copier)
 target_sources(ast_copier
@@ -51,7 +73,7 @@ target_sources(ast_copier
         FILE_SET CXX_MODULES FILES
             ast/visitors/copier.cpp
 )
-target_link_libraries(ast_copier PRIVATE stupid_type_traits ast)
+target_link_libraries(ast_copier PRIVATE stupid_type_traits ast variant)
 
 add_library(ast_extractor)
 target_sources(ast_extractor
@@ -59,7 +81,7 @@ target_sources(ast_extractor
         FILE_SET CXX_MODULES FILES
             ast/visitors/extractor.cpp
 )
-target_link_libraries(ast_extractor PRIVATE stupid_type_traits ast)
+target_link_libraries(ast_extractor PRIVATE stupid_type_traits ast variant)
 
 add_library(ast_hasher)
 target_sources(ast_hasher
@@ -67,7 +89,7 @@ target_sources(ast_hasher
         FILE_SET CXX_MODULES FILES
             ast/visitors/hasher.cpp
 )
-target_link_libraries(ast_hasher PRIVATE stupid_type_traits ast)
+target_link_libraries(ast_hasher PRIVATE stupid_type_traits ast variant)
 
 add_library(ast_interpreter)
 target_sources(ast_interpreter
@@ -75,7 +97,7 @@ target_sources(ast_interpreter
         FILE_SET CXX_MODULES FILES
             ast/visitors/interpreter.cpp
 )
-target_link_libraries(ast_interpreter PRIVATE stupid_type_traits ast)
+target_link_libraries(ast_interpreter PRIVATE stupid_type_traits ast variant)
 
 add_library(ast_printer)
 target_sources(ast_printer
@@ -83,7 +105,7 @@ target_sources(ast_printer
         FILE_SET CXX_MODULES FILES
             ast/visitors/printer.cpp
 )
-target_link_libraries(ast_printer PRIVATE stupid_type_traits ast)
+target_link_libraries(ast_printer PRIVATE stupid_type_traits ast variant)
 
 add_library(ast_boxed_node_builder)
 target_sources(ast_boxed_node_builder
@@ -91,7 +113,7 @@ target_sources(ast_boxed_node_builder
         FILE_SET CXX_MODULES FILES
             ast/builders/boxed.cpp
 )
-target_link_libraries(ast_boxed_node_builder PRIVATE stupid_type_traits ast ast_interpreter)
+target_link_libraries(ast_boxed_node_builder PRIVATE stupid_type_traits ast ast_interpreter variant)
 
 add_library(ast_hash_payload_builder)
 target_sources(ast_hash_payload_builder
@@ -133,11 +155,3 @@ target_sources(parser
             parser/left_recursive.cpp
 )
 target_link_libraries(parser PRIVATE ast stupid_type_traits ast_boxed_node_builder)
-
-if(LOXXY_STD_VARIANT)
-    target_compile_definitions(ast PUBLIC STD_VARIANT)
-    target_compile_definitions(stupid_type_traits PUBLIC STD_VARIANT)
-else()
-    target_link_libraries(ast PUBLIC mpark_variant)
-    target_link_libraries(stupid_type_traits PUBLIC mpark_variant)
-endif()

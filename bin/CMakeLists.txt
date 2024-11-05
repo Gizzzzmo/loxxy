@@ -15,4 +15,4 @@ target_link_libraries(parser_repl
         ast_hash_payload_builder
         ast_interpreter
 )
-target_link_libraries(playground PRIVATE stupid_type_traits ast ast_interpreter)
+target_link_libraries(playground PRIVATE variant)

@@ -1,28 +1,67 @@
-#include <functional>
-#include <memory>
 #include <type_traits>
-#include <variant>
+#include <utility>
 #include <cassert>
+#include <iostream>
 
-import utils.stupid_type_traits;
-import ast;
-import ast.interpreter;
+import utils.variant;
 
-using namespace loxxy;
+using namespace utils;
+
+
+struct Test : WrappedVar<variant<int, double>> {
+    using WrappedVar<variant<int, double>>::WrappedVar;
+};
+
+struct Visitor {
+    void operator()(int) {
+        std::cout << "int" << std::endl;
+    }
+
+    void operator()(double) {
+        std::cout << "double" << std::endl;
+    }
+};
+
 
 int main() {
-    BoxedSTN<> node = std::make_unique<NumberNode<>>(
-        empty{}, 9
-    );
+
+    Test test{0};
+
+    visit(Visitor{}, test);
+    if (holds_alternative<int>(test))
+        std::cout << "heyo " << get<int>(test) << "\n";
+    if (holds_alternative<double>(test))
+        std::cout << "heya " << get<double>(test) << "\n";
+
+    auto blub = get_if<int>(&test);
+    auto blab = get_if<double>(&test);
+
+    std::cout << blub << " " << blab << "\n";
+
+    
+    // .if (std::holds_alternative<int>(str)) {
+    //     std::cout << "hoi" << std::endl;
+    // }
+// 
+    
 
 
-    Interpreter<empty, UniquePtrIndirection, true, void> interpreter;
-    Value x1 = interpreter(NumberNode<>{{}, 9});
-    Value x2 = interpreter(NilNode<>{{}});
-    Value x3 = interpreter(BoolNode<>{{}, true});
-
-    Value x4 = interpreter(GroupingNode<>{{}, std::move(node)});
     //visit(interpreter, );
 
     return 0;
 }
+
+
+#if 0 
+
+    BoxedExpr<> node = std::make_unique<NumberExpr<>>(
+        empty{}, 9
+    );
+Interpreter<empty, UniquePtrIndirection, true, void> interpreter;
+    Value x1 = interpreter(NumberExpr<>{{}, 9});
+    Value x2 = interpreter(NilExpr<>{{}});
+    Value x3 = interpreter(BoolExpr<>{{}, true});
+
+    Value x4 = interpreter(GroupingExpr<>{{}, std::move(node)});
+    
+#endif

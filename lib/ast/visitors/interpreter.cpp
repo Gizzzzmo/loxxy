@@ -4,11 +4,6 @@ module;
 #include <stdexcept>
 #include <concepts>
 #include <cstddef>
-#ifdef STD_VARIANT
-#include <variant>
-#else
-#include <mpark/variant.hpp>
-#endif
 #include <optional>
 #include <string>
 #include <concepts>
@@ -16,16 +11,12 @@ module;
 export module ast.interpreter;
 import ast;
 import utils.stupid_type_traits;
+import utils.variant;
 
 using utils::IndirectVisitor;
 using std::string;
 using std::nullptr_t;
 using std::same_as;
-#ifdef STD_VARIANT
-using std::variant;
-#else
-using mpark::variant;
-#endif
 
 
 export namespace loxxy {
@@ -113,7 +104,7 @@ std::ostream& operator<<(std::ostream& ostream, const Value& value) {
     //if (std::holds_alternative<nullptr_t>(value))
     //    ostream << "nil";
 
-    loxxy::visit(ValuePrinter{ostream}, value);
+    utils::visit(ValuePrinter{ostream}, value);
     return ostream;
 }
 
@@ -129,64 +120,64 @@ struct Interpreter : IndirectVisitor<
     using Parent::operator();
     using Parent::Parent;
 
-    Value operator()(const BinaryNode<Payload, Indirection, ptr_variant>& node) {
-        auto lhs = loxxy::visit(*this, node.lhs);
-        auto rhs = loxxy::visit(*this, node.rhs);
+    Value operator()(const BinaryExpr<Payload, Indirection, ptr_variant>& node) {
+        auto lhs = utils::visit(*this, node.lhs);
+        auto rhs = utils::visit(*this, node.rhs);
         switch (node.op.getType()) {
             case GREATER:
-                return Value{loxxy::visit(Greater{}, lhs, rhs)};
+                return Value{utils::visit(Greater{}, lhs, rhs)};
             case GREATER_EQUAL:
-                return Value{loxxy::visit(GreaterEq{}, lhs, rhs)};
+                return Value{utils::visit(GreaterEq{}, lhs, rhs)};
             case LESS:
-                return Value{loxxy::visit(Less{}, lhs, rhs)};
+                return Value{utils::visit(Less{}, lhs, rhs)};
             case LESS_EQUAL:
-                return Value{loxxy::visit(LessEq{}, lhs, rhs)};
+                return Value{utils::visit(LessEq{}, lhs, rhs)};
             case EQUAL_EQUAL:
-                return Value{loxxy::visit(Equals{}, lhs, rhs)};
+                return Value{utils::visit(Equals{}, lhs, rhs)};
             case BANG_EQUAL:
-                return Value{!loxxy::visit(Equals{}, lhs, rhs)};
+                return Value{!utils::visit(Equals{}, lhs, rhs)};
             case PLUS:
-                return loxxy::visit(Plus{}, lhs, rhs);
+                return utils::visit(Plus{}, lhs, rhs);
             case MINUS:
-                return Value{loxxy::visit(Minus{}, lhs, rhs)};
+                return Value{utils::visit(Minus{}, lhs, rhs)};
             case STAR:
-                return Value{loxxy::visit(Times{}, lhs, rhs)};
+                return Value{utils::visit(Times{}, lhs, rhs)};
             case SLASH:
-                return Value{loxxy::visit(Divide{}, lhs, rhs)};
+                return Value{utils::visit(Divide{}, lhs, rhs)};
             default:
                 throw std::runtime_error("malformed binary node");
         }
     }
 
-    Value operator()(const GroupingNode<Payload, Indirection, ptr_variant>& node) {
-        return loxxy::visit(*this, node.expr);
+    Value operator()(const GroupingExpr<Payload, Indirection, ptr_variant>& node) {
+        return utils::visit(*this, node.expr);
     }
 
-    Value operator()(const UnaryNode<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const UnaryExpr<Payload, Indirection, ptr_variant>& node) {
         Value rhs = visit(*this, node.expr);
         switch (node.op.getType()) {
             case MINUS:
-                return Value{loxxy::visit(Minus{}, rhs)};
+                return Value{utils::visit(Minus{}, rhs)};
             case BANG:
-                return Value{loxxy::visit(Not{}, rhs)};
+                return Value{utils::visit(Not{}, rhs)};
             default:
                 throw std::runtime_error("malformed unary node");
         }
     }
 
-    Value operator()(const NumberNode<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const NumberExpr<Payload, Indirection, ptr_variant>& node) {
         return Value{node.x};
     }
 
-    Value operator()(const StringNode<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const StringExpr<Payload, Indirection, ptr_variant>& node) {
         return Value{string(*node.string)};
     }
 
-    Value operator()(const NilNode<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) {
         return Value{nullptr};
     }
 
-    Value operator()(const BoolNode<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const BoolExpr<Payload, Indirection, ptr_variant>& node) {
         return Value{node.x};
     }
 

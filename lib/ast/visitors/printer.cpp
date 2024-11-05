@@ -5,6 +5,7 @@ module;
 export module ast.printer;
 import ast;
 import utils.stupid_type_traits;
+import utils.variant;
 
 using utils::IndirectVisitor;
 
@@ -27,7 +28,7 @@ struct ASTPrinter :
     ASTPrinter(std::ostream& stream, Args&&... args) : Parent(std::forward<Args>(args)...),
         stream(stream) {}
 
-    void operator()(const BinaryNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const BinaryExpr<Payload, Indirection, ptr_variant>& node) {
         stream << node.op.getLexeme() << " (";
         visit(*this, node.lhs);
         stream << ") (";
@@ -35,28 +36,28 @@ struct ASTPrinter :
         stream << ")";
     }
 
-    void operator()(const GroupingNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const GroupingExpr<Payload, Indirection, ptr_variant>& node) {
         stream << "(";
         visit(*this, node.expr);
         stream << ")";
     }
 
-    void operator()(const StringNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const StringExpr<Payload, Indirection, ptr_variant>& node) {
         stream << "\"" << *node.string << "\"";
     }
-    void operator()(const NumberNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const NumberExpr<Payload, Indirection, ptr_variant>& node) {
         stream << node.x;
     }
-    void operator()(const UnaryNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const UnaryExpr<Payload, Indirection, ptr_variant>& node) {
         stream << node.op.getLexeme() << " (";
         visit(*this, node.expr);
         stream << ") ";
     }
-    void operator()(const BoolNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const BoolExpr<Payload, Indirection, ptr_variant>& node) {
         stream << (node.x ? "true" : "false");
     }
 
-    void operator()(const NilNode<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) {
         stream << "nil";
     }
     private:
@@ -64,7 +65,7 @@ struct ASTPrinter :
 };
 
 template<typename Payload, typename Indirection, bool ptr_variant>
-inline std::ostream& operator<<(std::ostream& ostream, const STNPointer<Payload, Indirection, ptr_variant>& node) {
+inline std::ostream& operator<<(std::ostream& ostream, const ExprPointer<Payload, Indirection, ptr_variant>& node) {
     visit(ASTPrinter<Payload, Indirection, true, void>{ostream}, node);
     return ostream;
 }
@@ -90,7 +91,7 @@ template<typename Resolver, typename Payload, typename Indirection, bool ptr_var
     requires(!std::same_as<Resolver, void>)
 resolver_stream<Resolver>& operator<<(
     resolver_stream<Resolver>& ostream,
-    const STNPointer<Payload, Indirection, ptr_variant>& node
+    const ExprPointer<Payload, Indirection, ptr_variant>& node
 ) {
     visit(
         ASTPrinter<Payload, Indirection, ptr_variant, Resolver>(

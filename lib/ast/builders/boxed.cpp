@@ -7,6 +7,7 @@ export module ast.boxed_node_builder;
 import ast;
 import ast.interpreter;
 import utils.stupid_type_traits;
+import utils.variant;
 
 using std::make_unique;
 
@@ -26,13 +27,13 @@ struct BoxedNodeBuilder {
 
     template<typename... Args> 
         requires (ConcreteSTN<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>)
-    BoxedSTN<Payload> operator()(Args&&... args) {
-        BoxedSTN<Payload> node = make_unique<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>(
+    BoxedExpr<Payload> operator()(Args&&... args) {
+        BoxedExpr<Payload> node = make_unique<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>(
             payload_builder(std::forward<Args>(args)...),
             std::forward<Args>(args)...
         );
         try {
-            Value value = visit(interpreter, node);
+            Value value = utils::visit(interpreter, node);
             std::cout << value << std::endl;
         } catch (const TypeError& err) {
             std::cerr << err.what() << std::endl;

@@ -6,6 +6,7 @@ module;
 export module ast.copier;
 import ast;
 import utils.stupid_type_traits;
+import utils.variant;
 
 using utils::IndirectVisitor;
 using std::make_unique;
@@ -34,7 +35,7 @@ struct ASTCopier
     ASTCopier(Builder_&& builder, Args&&... args) : builder(std::forward<Builder_>(builder)),
         Parent(std::forward<Args>(args)...) {}
 
-    STNPtr operator()(const BinaryNode<Payload, Indirection, ptr_variant>& node) {
+    STNPtr operator()(const BinaryExpr<Payload, Indirection, ptr_variant>& node) {
         auto copy_lhs = visit(*this, node.lhs);
         auto copy_rhs = visit(*this, node.rhs);
         
@@ -45,32 +46,32 @@ struct ASTCopier
         );
     }
 
-    STNPtr operator()(const GroupingNode<Payload, Indirection, ptr_variant>& node) {
+    STNPtr operator()(const GroupingExpr<Payload, Indirection, ptr_variant>& node) {
         return builder(
             visit(*this, node.expr)
         );
     }
 
-    STNPtr operator()(const UnaryNode<Payload, Indirection, ptr_variant>& node) {
+    STNPtr operator()(const UnaryExpr<Payload, Indirection, ptr_variant>& node) {
         return builder(
             visit(*this, node.expr),
             node.op
         );
     }
 
-    STNPtr operator()(const NumberNode<Payload, Indirection, ptr_variant>& node) {
+    STNPtr operator()(const NumberExpr<Payload, Indirection, ptr_variant>& node) {
         return builder(node.x);
     }
 
-    STNPtr operator()(const StringNode<Payload, Indirection, ptr_variant>& node) {
+    STNPtr operator()(const StringExpr<Payload, Indirection, ptr_variant>& node) {
         return builder(node.string);
     }
 
-    STNPtr operator()(const BoolNode<Payload, Indirection, ptr_variant>& node) {
+    STNPtr operator()(const BoolExpr<Payload, Indirection, ptr_variant>& node) {
         return builder(node.x);
     }
 
-    STNPtr operator()(const NilNode<Payload, Indirection, ptr_variant>&) {
+    STNPtr operator()(const NilExpr<Payload, Indirection, ptr_variant>&) {
         return builder();
     }
     private:

@@ -7,8 +7,6 @@ import ast;
 import ast.extractor;
 import utils.stupid_type_traits;
 
-using utils::IndirectVisitor;
-
 export namespace loxxy {
 
 struct NodeHash {
@@ -17,12 +15,12 @@ struct NodeHash {
     uint64_t hash;
 };
 
-static_assert(ConcreteSTN<NilNode<NodeHash>>);
+static_assert(ConcreteSTN<NilExpr<NodeHash>>);
 
 template<typename Indirection, bool ptr_variant, typename Resolver = void>
 struct HashPayloadBuilder {
-    using STNPointer = STNPointer<NodeHash, Indirection, ptr_variant>;
-    NodeHash payload(const STNPointer& node) {
+    using ExprPointer = ExprPointer<NodeHash, Indirection, ptr_variant>;
+    NodeHash payload(const ExprPointer& node) {
         return visit(extractor, node);
     }
 
@@ -36,17 +34,17 @@ struct HashPayloadBuilder {
         return hash;
     }
 
-    NodeHash operator()(const STNPointer& child, const Token& token) {
+    NodeHash operator()(const ExprPointer& child, const Token& token) {
         uint64_t hash = hash_ast(payload(child).hash, token);
         return hash;
     }
 
-    NodeHash operator()(const STNPointer& child) {
+    NodeHash operator()(const ExprPointer& child) {
         uint64_t hash = hash_ast(payload(child).hash);
         return hash;
     }
 
-    NodeHash operator()(const STNPointer& lhs, const STNPointer& rhs, const Token& token) {
+    NodeHash operator()(const ExprPointer& lhs, const ExprPointer& rhs, const Token& token) {
         uint64_t hash = hash_ast(payload(lhs).hash, payload(rhs).hash, token);
         return hash;
     }

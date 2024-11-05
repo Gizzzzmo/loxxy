@@ -19,26 +19,26 @@ export namespace loxxy {
 template<typename T, typename Payload, typename Indirection, bool ptr_variant>
 concept NodeBuilder = requires(
     T t,
-    STNPointer<Payload, Indirection, ptr_variant>&& node,
+    ExprPointer<Payload, Indirection, ptr_variant>&& node,
     Token token,
     double x,
     bool b,
     const persistent_string<>* str
 ) {
-    { t(node, node, token) } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
-    { t(node, token) } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
-    { t(node) } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
-    { t(str) } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
-    { t(x) } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
-    { t() } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
-    { t(b) } -> same_as<STNPointer<Payload, Indirection, ptr_variant>>;
+    { t(node, node, token) } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
+    { t(node, token) } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
+    { t(node) } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
+    { t(str) } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
+    { t(x) } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
+    { t() } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
+    { t(b) } -> same_as<ExprPointer<Payload, Indirection, ptr_variant>>;
 };
 
 
 template<typename T, typename Payload, typename Indirection, bool ptr_variant>
 concept PayloadBuilder = requires(
     T t,
-    STNPointer<Payload, Indirection, ptr_variant>& node,
+    ExprPointer<Payload, Indirection, ptr_variant>& node,
     Token& token,
     double& x,
     bool& b,

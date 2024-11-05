@@ -18,14 +18,14 @@ template<
 struct OffsetBuilder {
     using Self = OffsetBuilder<offset_t, Payload, Builder>;
     using Indirection = OffsetPointerIndirection<uint32_t>;
-    using STNPointer = STNPointer<Payload, Indirection, true>;
-    using BinaryNode = BinaryNode<Payload, Indirection, true>;
-    using UnaryNode = UnaryNode<Payload, Indirection, true>;
-    using GroupingNode = GroupingNode<Payload, Indirection, true>;
-    using StringNode = StringNode<Payload, Indirection, true>;
-    using NumberNode = NumberNode<Payload, Indirection, true>;
-    using BoolNode = BoolNode<Payload, Indirection, true>;
-    using NilNode = NilNode<Payload, Indirection, true>;
+    using ExprPointer = ExprPointer<Payload, Indirection, true>;
+    using BinaryExpr = BinaryExpr<Payload, Indirection, true>;
+    using UnaryExpr = UnaryExpr<Payload, Indirection, true>;
+    using GroupingExpr = GroupingExpr<Payload, Indirection, true>;
+    using StringExpr = StringExpr<Payload, Indirection, true>;
+    using NumberExpr = NumberExpr<Payload, Indirection, true>;
+    using BoolExpr = BoolExpr<Payload, Indirection, true>;
+    using NilExpr = NilExpr<Payload, Indirection, true>;
 
     template<typename... Args>
     OffsetBuilder(Args&&... args) : payload_builder(std::forward<Args>(args)...) {}
@@ -41,7 +41,7 @@ struct OffsetBuilder {
     }
 
     template<typename... Args>
-    STNPointer operator()(Args&&... args) {
+    ExprPointer operator()(Args&&... args) {
         using NodeType = ResolveNodeType<Payload, Indirection, true, Args...>;
         auto& vector = vector_of<NodeType>();
         vector.emplace_back(
@@ -64,28 +64,28 @@ struct OffsetBuilder {
     }
 
     template<>
-    std::vector<BinaryNode>&  vector_of<BinaryNode>() { return binary_nodes; }
+    std::vector<BinaryExpr>&  vector_of<BinaryExpr>() { return binary_nodes; }
     template<>
-    std::vector<UnaryNode>&  vector_of<UnaryNode>() { return unary_nodes; }
+    std::vector<UnaryExpr>&  vector_of<UnaryExpr>() { return unary_nodes; }
     template<>
-    std::vector<GroupingNode>&  vector_of<GroupingNode>() { return grouping_nodes; }
+    std::vector<GroupingExpr>&  vector_of<GroupingExpr>() { return grouping_nodes; }
     template<>
-    std::vector<StringNode>&  vector_of<StringNode>() { return string_nodes; }
+    std::vector<StringExpr>&  vector_of<StringExpr>() { return string_nodes; }
     template<>
-    std::vector<NumberNode>&  vector_of<NumberNode>() { return number_nodes; }
+    std::vector<NumberExpr>&  vector_of<NumberExpr>() { return number_nodes; }
     template<>
-    std::vector<BoolNode>&  vector_of<BoolNode>() { return bool_nodes; }
+    std::vector<BoolExpr>&  vector_of<BoolExpr>() { return bool_nodes; }
     template<>
-    std::vector<NilNode>&  vector_of<NilNode>() { return nil_nodes; }
+    std::vector<NilExpr>&  vector_of<NilExpr>() { return nil_nodes; }
 
     private:
-        std::vector<BinaryNode> binary_nodes;
-        std::vector<UnaryNode> unary_nodes;
-        std::vector<GroupingNode> grouping_nodes;
-        std::vector<StringNode> string_nodes;
-        std::vector<NumberNode> number_nodes;
-        std::vector<BoolNode> bool_nodes;
-        std::vector<NilNode> nil_nodes;
+        std::vector<BinaryExpr> binary_nodes;
+        std::vector<UnaryExpr> unary_nodes;
+        std::vector<GroupingExpr> grouping_nodes;
+        std::vector<StringExpr> string_nodes;
+        std::vector<NumberExpr> number_nodes;
+        std::vector<BoolExpr> bool_nodes;
+        std::vector<NilExpr> nil_nodes;
         Builder payload_builder;
         // Interpreter<Payload, Indirection, true, Self> interpreter;
 

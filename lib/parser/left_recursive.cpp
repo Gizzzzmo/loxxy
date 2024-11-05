@@ -29,7 +29,7 @@ template<
     NodeBuilder<Payload, Indirection, ptr_variant> Builder = BoxedNodeBuilder<Payload>
 >
 class Parser {
-    using Node = STNPointer<Payload, Indirection, ptr_variant>;
+    using Node = ExprPointer<Payload, Indirection, ptr_variant>;
 
     public:
         template<typename... Args>

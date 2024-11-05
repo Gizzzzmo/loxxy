@@ -240,99 +240,99 @@ template<typename Variant, typename Fn>
 using MapTypes = typename MapTypesImpl<Variant, Fn>::type;
 
 template<typename Payload = empty>
-struct BinaryNode;
+struct BinaryExpr;
 template<typename Payload = empty>
-struct GroupingNode;
+struct GroupingExpr;
 template<typename Payload = empty>
-struct UnaryNode;
+struct UnaryExpr;
 template<typename Payload = empty>
-struct NumberNode;
+struct NumberExpr;
 template<typename Payload = empty>
-struct StringNode;
+struct StringExpr;
 template<typename Payload = empty>
-struct BoolNode;
+struct BoolExpr;
 template<typename Payload = empty>
-struct NilNode;
+struct NilExpr;
 
 template<typename T, typename Payload = empty>
-concept LiteralNode = same_as<T, NumberNode<Payload>>
-    || same_as<T, StringNode<Payload>>
-    || same_as<T, BoolNode<Payload>>
-    || same_as<T, NilNode<Payload>>;
+concept LiteralNode = same_as<T, NumberExpr<Payload>>
+    || same_as<T, StringExpr<Payload>>
+    || same_as<T, BoolExpr<Payload>>
+    || same_as<T, NilExpr<Payload>>;
 
 template<typename Payload = empty>
-using SyntaxTreeNode = variant<
-    BinaryNode<Payload>,
-    UnaryNode<Payload>,
-    GroupingNode<Payload>,
-    NumberNode<Payload>,
-    StringNode<Payload>,
-    BoolNode<Payload>,
-    NilNode<Payload>
+using Expression = variant<
+    BinaryExpr<Payload>,
+    UnaryExpr<Payload>,
+    GroupingExpr<Payload>,
+    NumberExpr<Payload>,
+    StringExpr<Payload>,
+    BoolExpr<Payload>,
+    NilExpr<Payload>
 >;
 
-// variant of unique pointers to some SyntaxTreeNode
+// variant of unique pointers to some Expression
 template<typename Payload = empty>
-using BoxedSTN = MapTypes<SyntaxTreeNode<Payload>, PropConstIndirection<UniquePtrIndirection>>;
-// variant of shared pointers (RC = reference counted) to some SyntaxTreeNode
+using BoxedExpr = MapTypes<Expression<Payload>, PropConstIndirection<UniquePtrIndirection>>;
+// variant of shared pointers (RC = reference counted) to some Expression
 template<typename Payload = empty>
-using RCSTN = MapTypes<SyntaxTreeNode<Payload>, PropConstIndirection<SharedPtrIndirection>>;
-// variant of pointers to some SyntaxTreeNode
+using RCExpr = MapTypes<Expression<Payload>, PropConstIndirection<SharedPtrIndirection>>;
+// variant of pointers to some Expression
 template<typename Payload = empty>
-using STNPointer = MapTypes<SyntaxTreeNode<Payload>, PropConstIndirection<PointerIndirection>>;
+using ExprPointer = MapTypes<Expression<Payload>, PropConstIndirection<PointerIndirection>>;
 
 template<typename T, typename Payload = empty>
-concept STN = same_as<T, SyntaxTreeNode<Payload>>
-    || same_as<T, BoxedSTN<Payload>>
-    || same_as<T, RCSTN<Payload>>
-    || same_as<T, STNPointer<Payload>>;
+concept STN = same_as<T, Expression<Payload>>
+    || same_as<T, BoxedExpr<Payload>>
+    || same_as<T, RCExpr<Payload>>
+    || same_as<T, ExprPointer<Payload>>;
 
 template<typename Payload>
-struct BinaryNode {
-    BoxedSTN<Payload> lhs;
-    BoxedSTN<Payload> rhs;
+struct BinaryExpr {
+    BoxedExpr<Payload> lhs;
+    BoxedExpr<Payload> rhs;
     Payload payload;
 };
 
 template<typename Payload>
-struct GroupingNode {
-    BoxedSTN<Payload> expr;
+struct GroupingExpr {
+    BoxedExpr<Payload> expr;
     Payload payload;
 };
 
 template<typename Payload>
-struct UnaryNode {
-    BoxedSTN<Payload> expr;
+struct UnaryExpr {
+    BoxedExpr<Payload> expr;
     Payload payload;
 };
 
 template<typename Payload>
-struct NumberNode {
+struct NumberExpr {
     double x;
     Payload payload;
 };
 
 template<typename Payload>
-struct StringNode {
+struct StringExpr {
     std::string str;
     Payload payload;
 };
 
 template<typename Payload>
-struct BoolNode {
+struct BoolExpr {
     bool x;
     Payload payload;
 };
 
 template<typename Payload>
-struct NilNode {
+struct NilExpr {
     Payload payload;
 };
 
 
 auto test() {
-    BoxedSTN<> node = std::make_unique<GroupingNode<>>(
-        std::make_unique<NilNode<>>()
+    BoxedExpr<> node = std::make_unique<GroupingExpr<>>(
+        std::make_unique<NilExpr<>>()
     );
     return node;
 }

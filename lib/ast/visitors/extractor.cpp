@@ -3,6 +3,7 @@ module;
 export module ast.extractor;
 import ast;
 import utils.stupid_type_traits;
+import utils.variant;
 
 using utils::IndirectVisitor;
 using std::same_as;
@@ -31,12 +32,12 @@ struct Extractor :
 };
 
 template<typename Payload, typename Indirection, bool ptr_variant>
-auto& payload_of(STNPointer<Payload, Indirection, ptr_variant>& node) {
+auto& payload_of(ExprPointer<Payload, Indirection, ptr_variant>& node) {
     return visit(Extractor<Payload, Indirection, ptr_variant, void>{}, node);
 }
 
 template<typename Payload, typename Indirection, bool ptr_variant, typename Resolver>
-auto& payload_of(STNPointer<Payload, Indirection, ptr_variant>& node, Resolver&& resolver) {
+auto& payload_of(ExprPointer<Payload, Indirection, ptr_variant>& node, Resolver&& resolver) {
     return visit(
         Extractor<Payload, Indirection, ptr_variant, Resolver>{
             std::forward<Resolver>(resolver)
@@ -46,15 +47,15 @@ auto& payload_of(STNPointer<Payload, Indirection, ptr_variant>& node, Resolver&&
 }
 
 template<typename Payload, typename Indirection, bool ptr_variant>
-const auto& payload_of(const STNPointer<Payload, Indirection, ptr_variant>& node) {
-    using NodeType = STNPointer<Payload, Indirection, ptr_variant>;
+const auto& payload_of(const ExprPointer<Payload, Indirection, ptr_variant>& node) {
+    using NodeType = ExprPointer<Payload, Indirection, ptr_variant>;
     return const_cast<const Payload&>(payload_of(const_cast<NodeType&>(node)));
 }
 
 template<typename Payload, typename Indirection, bool ptr_variant, typename Resolver>
-const Payload& payload_of(const STNPointer<Payload, Indirection, ptr_variant>& node, Resolver&& resolver) {
+const Payload& payload_of(const ExprPointer<Payload, Indirection, ptr_variant>& node, Resolver&& resolver) {
     return const_cast<const Payload&>(payload_of(
-        const_cast<STNPointer<Payload, Indirection, ptr_variant>&>(node),
+        const_cast<ExprPointer<Payload, Indirection, ptr_variant>&>(node),
         std::forward<Resolver>(resolver)
     ));
 }
