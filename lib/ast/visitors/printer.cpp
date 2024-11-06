@@ -60,12 +60,30 @@ struct ASTPrinter :
     void operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) {
         stream << "nil";
     }
+
+    void operator()(const PrintStmt<Payload, Indirection, ptr_variant>& node) {
+        stream << "PRINT ( ";
+        visit(*this, node.expr);
+        stream << " )";
+    }
+
+    void operator()(const ExpressionStmt<Payload, Indirection, ptr_variant>& node) {
+        stream << "EXPR_STMT (";
+        visit(*this, node.expr);
+        stream << " )";
+    }
     private:
         std::ostream& stream;
 };
 
 template<typename Payload, typename Indirection, bool ptr_variant>
 inline std::ostream& operator<<(std::ostream& ostream, const ExprPointer<Payload, Indirection, ptr_variant>& node) {
+    visit(ASTPrinter<Payload, Indirection, true, void>{ostream}, node);
+    return ostream;
+}
+
+template<typename Payload, typename Indirection, bool ptr_variant>
+inline std::ostream& operator<<(std::ostream& ostream, const StmtPointer<Payload, Indirection, ptr_variant>& node) {
     visit(ASTPrinter<Payload, Indirection, true, void>{ostream}, node);
     return ostream;
 }

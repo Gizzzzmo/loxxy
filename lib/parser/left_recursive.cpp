@@ -8,12 +8,15 @@ module;
 #include <ostream>
 #include <sstream>
 #include <utility>
+#include "loxxy/ast.hpp"
 
 export module parser:left_recursive;
 import ast;
 import ast.boxed_node_builder;
+import ast.printer;
 import utils.stupid_type_traits;
 import utils.string_store;
+import utils.variant;
 
 using std::optional;
 using std::same_as;
@@ -29,30 +32,30 @@ template<
     NodeBuilder<Payload, Indirection, ptr_variant> Builder = BoxedNodeBuilder<Payload>
 >
 class Parser {
-    using Node = ExprPointer<Payload, Indirection, ptr_variant>;
+    USING_FAMILY(Payload, Indirection, ptr_variant);
 
     public:
         template<typename... Args>
         Parser(istream& stream, Args&&... args) : stream(stream), node_builder(std::forward<Args>(args)...) {}
-        void parse() {
-            
-            while (!eof) {
+        TURoot parse() {
+            TURoot root;
+            while (!eof && !match(END_OF_FILE)) {
                 try {
-                    Node root = expression();
-                    std::cout << &root << std::endl;
-                    //std::cout << payload_of(root).hash << std::endl;
+                    root.statements.push_back(statement());
+                    std::cout << root.statements.back() << std::endl;
                 } catch(const ParseError&) {
                     if (eof)
-                        return;
+                        break;
                     stream.get();
                     continue;
                 }
             }
+            return root;
         }
     private:
-        template<typename... Args>
-        Node make_node(Args&&... args) {
-            return node_builder(std::forward<Args>(args)...);
+        template<typename NodeType, typename... Args>
+        auto make_node(Args&&... args) {
+            return node_builder(mark<NodeType>, std::forward<Args>(args)...);
         }
 
         template<std::same_as<TokenType>... T>
@@ -85,70 +88,86 @@ class Parser {
             panic = true;
             return ParseError();
         }
-        Node expression() {
-            Node node = equality();
+        StmtPointer statement() {
+            if (match(PRINT))
+                return print_statement();
+
+            return expression_statement();
+        }
+        StmtPointer print_statement() {
+            ExprPointer expr = expression();
+            expect(SEMICOLON);
+            return make_node<PrintStmt>(std::move(expr));
+        }
+        StmtPointer expression_statement() {
+            ExprPointer expr = expression();
+            expect(SEMICOLON);
+            return make_node<ExpressionStmt>(std::move(expr));
+        }
+        ExprPointer expression() {
+            ExprPointer node = equality();
 
             optional<Token> op;
             if ( (op = match(COMMA)) ) {
-                Node rhs = expression();
-                node = make_node(std::move(node), std::move(rhs), op.value());
+                ExprPointer rhs = expression();
+                node = make_node<BinaryExpr>(std::move(node), std::move(rhs), op.value());
             }
 
             return node;
         }
-        Node equality() {
-            Node node = comparison();
+        ExprPointer equality() {
+            ExprPointer node = comparison();
             optional<Token> op;
             while ( (op = match(BANG_EQUAL, EQUAL_EQUAL)) ) {
-                Node rhs = comparison();
-                node = make_node(std::move(node), std::move(rhs), op.value());
+                ExprPointer rhs = comparison();
+                node = make_node<BinaryExpr>(std::move(node), std::move(rhs), op.value());
             }
 
             return node;
         }
-        Node comparison() {
-            Node node = term();
+        ExprPointer comparison() {
+            ExprPointer node = term();
 
             optional<Token> op;
             while ( (op = match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) ) {
-                Node rhs = term();
-                node = make_node(std::move(node), std::move(rhs), op.value());
+                ExprPointer rhs = term();
+                node = make_node<BinaryExpr>(std::move(node), std::move(rhs), op.value());
             }
 
             return node;
         }
-        Node term() {
-            Node node = factor();
+        ExprPointer term() {
+            ExprPointer node = factor();
             optional<Token> op;
             while( (op = match(MINUS, PLUS)) ) {
-                Node rhs = factor();
-                node = make_node(std::move(node), std::move(rhs), op.value());
+                ExprPointer rhs = factor();
+                node = make_node<BinaryExpr>(std::move(node), std::move(rhs), op.value());
             }
             
             return node;
         }
 
-        Node factor() {
-            Node node = unary();
+        ExprPointer factor() {
+            ExprPointer node = unary();
 
             optional<Token> op;
             while ( (op = match(SLASH, STAR)) ) {
-                Node rhs = unary();
-                node = make_node(std::move(node), std::move(rhs), op.value());
+                ExprPointer rhs = unary();
+                node = make_node<BinaryExpr>(std::move(node), std::move(rhs), op.value());
             }
 
             return node;
         }
 
-        Node unary() {
+        ExprPointer unary() {
             optional<Token> op = match(BANG, MINUS);
             if (op)
-                return make_node(unary(), op.value());
+                return make_node<UnaryExpr>(unary(), op.value());
 
             return primary();
         }
 
-        Node primary() {
+        ExprPointer primary() {
             optional<Token> token = match(
                 FALSE, TRUE, NIL, NUMBER, STRING, LEFT_PAREN, END_OF_FILE
             );
@@ -163,19 +182,19 @@ class Parser {
                 eof = true;
                 throw error(token.value(), "Unexpected end of file");
             case FALSE:
-                return make_node(false);
+                return make_node<BoolExpr>(false);
             case TRUE:
-                return make_node(true);
+                return make_node<BoolExpr>(true);
             case NIL:
-                return make_node();
+                return make_node<NilExpr>();
             case NUMBER:
-                return make_node(token->getLiteral().number);
+                return make_node<NumberExpr>(token->getLiteral().number);
             case STRING:
-                return make_node(token->getLiteral().string);
+                return make_node<StringExpr>(token->getLiteral().string);
             case LEFT_PAREN:
-                Node node = expression();
+                ExprPointer node = expression();
                 expect(RIGHT_PAREN);
-                return make_node(std::move(node));
+                return make_node<GroupingExpr>(std::move(node));
             }
         }
         void synchronize() {

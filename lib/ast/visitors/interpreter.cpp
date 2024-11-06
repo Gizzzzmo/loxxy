@@ -21,7 +21,6 @@ using std::same_as;
 
 export namespace loxxy {
 
-using Value = variant<bool, double, string, nullptr_t>;
 
 template<typename T, typename... U>
 concept any_ref = (same_as<std::remove_cvref_t<T>, std::remove_cvref_t<U>> || ...) && std::is_reference_v<T>;

@@ -25,21 +25,28 @@ struct BoxedNodeBuilder {
     template<typename... Args>
     BoxedNodeBuilder(Args&&... args) : payload_builder(std::forward<Args>(args)...) {}
 
-    template<typename... Args> 
-        requires (ConcreteSTN<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>)
-    BoxedExpr<Payload> operator()(Args&&... args) {
-        BoxedExpr<Payload> node = make_unique<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>(
-            payload_builder(std::forward<Args>(args)...),
+    template<typename Out, typename... Args> 
+    auto operator()(marker<Out>, Args&&... args) {
+        auto node = make_unique<Out>(
+            payload_builder(mark<Out>, std::forward<Args>(args)...),
             std::forward<Args>(args)...
         );
-        try {
-            Value value = utils::visit(interpreter, node);
-            std::cout << value << std::endl;
-        } catch (const TypeError& err) {
-            std::cerr << err.what() << std::endl;
-        }
+        //try {
+        //    Value value = utils::visit(interpreter, node);
+        //    std::cout << value << std::endl;
+        //} catch (const TypeError& err) {
+        //    std::cerr << err.what() << std::endl;
+        //}
 
         return node;
+    }
+
+    template<typename Out, typename... Args> 
+    auto operator()(marker<Out>, const Payload& payload, Args&&... args) {
+        return make_unique<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>(
+            payload,
+            std::forward<Args>(args)...
+        );
     }
 };
 

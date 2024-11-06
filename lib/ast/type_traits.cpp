@@ -11,6 +11,13 @@ using std::false_type;
 
 export namespace loxxy {
 
+template<typename T>
+struct marker {
+};
+
+template<typename T>
+constexpr marker<T> mark{};
+
 
 template<typename T>
 struct LiteralSTNImpl : false_type {};
@@ -36,6 +43,10 @@ template<typename Payload, typename Indirection, bool ptr_variant>
 struct InnerSTNImpl<UnaryExpr<Payload, Indirection, ptr_variant>> : true_type {};
 template<typename Payload, typename Indirection, bool ptr_variant>
 struct InnerSTNImpl<GroupingExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template<typename Payload, typename Indirection, bool ptr_variant>
+struct InnerSTNImpl<PrintStmt<Payload, Indirection, ptr_variant>> : true_type {};
+template<typename Payload, typename Indirection, bool ptr_variant>
+struct InnerSTNImpl<ExpressionStmt<Payload, Indirection, ptr_variant>> : true_type {};
 
 template<typename T>
 concept InnerSTN = InnerSTNImpl<T>::value;
@@ -103,6 +114,28 @@ struct ResolveNodeTypeImpl<Payload, Indirection, ptr_variant, double> {
 template<typename Payload, typename Indirection, bool ptr_variant>
 struct ResolveNodeTypeImpl<Payload, Indirection, ptr_variant, const persistent_string<>*> {
     using type = StringExpr<Payload, Indirection, ptr_variant>;
+};
+
+template<
+    typename Payload, typename Indirection, bool ptr_variant,
+    typename StmtPayload, typename StmtIndirection, bool Stmt_ptr_variant
+>
+struct ResolveNodeTypeImpl<
+    Payload, Indirection, ptr_variant,
+    marker<ExpressionStmt<StmtPayload, StmtIndirection, Stmt_ptr_variant>>
+> {
+    using type = ExpressionStmt<Payload, Indirection, ptr_variant>;
+};
+
+template<
+    typename Payload, typename Indirection, bool ptr_variant,
+    typename StmtPayload, typename StmtIndirection, bool Stmt_ptr_variant
+>
+struct ResolveNodeTypeImpl<
+    Payload, Indirection, ptr_variant,
+    marker<PrintStmt<StmtPayload, StmtIndirection, Stmt_ptr_variant>>
+> {
+    using type = PrintStmt<Payload, Indirection, ptr_variant>;
 };
 
 template<typename Payload, typename Indirection, bool ptr_variant, typename... Args>

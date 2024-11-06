@@ -9,6 +9,7 @@ module;
 export module ast:nodes;
 
 import :token;
+import :value;
 import utils.string_store;
 import utils.stupid_type_traits;
 import utils.variant;
@@ -115,11 +116,13 @@ using RCExpr = ExprPointer<Payload, SharedPtrIndirection, ptr_variant>;
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 struct ExpressionStmt {
+    Payload payload;
     ExprPointer<Payload, Indirection, ptr_variant> expr;
 };
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 struct PrintStmt {
+    Payload payload;
     ExprPointer<Payload, Indirection, ptr_variant> expr;
 };
 
@@ -132,13 +135,33 @@ using Statement = variant<
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 class StmtPointer : public utils::WrappedVar<MapTypes<Statement<Payload, Indirection, ptr_variant>, Indirection>> {
     using Self = StmtPointer<Payload, Indirection, ptr_variant>;
-    using Var = MapTypes<Expression<Payload, Indirection, ptr_variant>, Indirection>;
+    using Var = MapTypes<Statement<Payload, Indirection, ptr_variant>, Indirection>;
     using utils::WrappedVar<Var>::WrappedVar;
 };
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 struct TURoot {
-    std::vector<StmtPointer<Payload, Indirection, ptr_variant>>;
-}
+    std::vector<StmtPointer<Payload, Indirection, ptr_variant>> statements;
+};
+
+template<typename Payload, typename Indirection, bool ptr_variant>
+struct Family {
+    using ExprPointer = ExprPointer<Payload, Indirection, ptr_variant>;
+
+    using BinaryExpr = BinaryExpr<Payload, Indirection, ptr_variant>;
+    using UnaryExpr = UnaryExpr<Payload, Indirection, ptr_variant>;
+    using GroupingExpr = GroupingExpr<Payload, Indirection, ptr_variant>;
+    using StringExpr = StringExpr<Payload, Indirection, ptr_variant>;
+    using NumberExpr = NumberExpr<Payload, Indirection, ptr_variant>;
+    using BoolExpr = BoolExpr<Payload, Indirection, ptr_variant>;
+    using NilExpr = NilExpr<Payload, Indirection, ptr_variant>;
+
+    using StmtPointer = StmtPointer<Payload, Indirection, ptr_variant>;
+
+    using PrintStmt = PrintStmt<Payload, Indirection, ptr_variant>;
+    using ExpressionStmt = ExpressionStmt<Payload, Indirection, ptr_variant>;
+
+    using TURoot = TURoot<Payload, Indirection, ptr_variant>;
+};
 
 } // namespace loxxy

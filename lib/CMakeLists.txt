@@ -54,6 +54,7 @@ target_sources(ast
         FILE_SET CXX_MODULES FILES
             ast/ast.cpp
             ast/nodes.cpp
+            ast/value.cpp
             ast/building.cpp
             ast/token.cpp
             ast/hash.cpp
@@ -66,6 +67,7 @@ target_link_libraries(ast
         murmurhash
         variant
 )
+target_include_directories(ast PUBLIC ast/include)
 
 add_library(ast_copier)
 target_sources(ast_copier
@@ -154,4 +156,4 @@ target_sources(parser
             parser/parser.cpp
             parser/left_recursive.cpp
 )
-target_link_libraries(parser PRIVATE ast stupid_type_traits ast_boxed_node_builder)
+target_link_libraries(parser PRIVATE ast_printer ast stupid_type_traits ast_boxed_node_builder)
