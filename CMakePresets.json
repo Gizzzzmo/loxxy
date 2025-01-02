@@ -9,7 +9,8 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cc",
                 "CMAKE_CXX_COMPILER": "c++",
-                "CMAKE_EXE_LINKER_FLAGS_INIT": "-fuse-ld=lld",
+                "CMAKE_CXX_FLAGS_INIT": "",
+                "CMAKE_EXE_LINKER_FLAGS_INIT": "",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
 	        }
 	    },
@@ -19,10 +20,10 @@
             "cacheVariables": {
                 "CMAKE_C_FLAGS": "-fdiagnostics-color=always",
                 "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
-                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g -Wall -fsanitize=undefined,address",
-                "CMAKE_C_FLAGS_DEBUG": "-O0 -g -Wall -fsanitize=undefined,address",
-                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -flto -Wall",
-                "CMAKE_C_FLAGS_RELEASE": "-O3 -flto -Wall",
+                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g -Wall -Wpedantic -fsanitize=undefined,address",
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g -Wall -Wpedantic -fsanitize=undefined,address",
+                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -Wall -flto",
+                "CMAKE_C_FLAGS_RELEASE": "-O3 -Wall -flto",
                 "CMAKE_EXE_LINKER_FLAGS_RELEASE": "-flto",
                 "CMAKE_EXE_LINKER_FLAGS_DEBUG": "-fsanitize=undefined,address",
                 "LOXXY_TESTING": "ON"
@@ -37,6 +38,11 @@
                 "CMAKE_BUILD_TYPE": "Debug"
 	        }
         },
+        {
+            "name": "lint",
+            "displayName": "Linting",
+            "inherits": ["debug"]
+        },
 
         {
             "name": "opt",
@@ -46,6 +52,27 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "debug-mpark",
+            "displayName": "Debug Mpark",
+            "generator": "Ninja",
+	        "inherits": ["clang-toolchain", "gnu-cli-develop"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "LOXXY_STD_VARIANT": "OFF"
+	        }
+        },
+
+        {
+            "name": "opt-mpark",
+            "displayName": "Optimized MPark",
+            "generator": "Ninja",
+            "inherits": ["clang-toolchain", "gnu-cli-develop"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "LOXXY_STD_VARIANT": "OFF"
+            }
         }
     ],
     "buildPresets": [
@@ -53,6 +80,11 @@
             "name": "debug",
             "displayName": "Debug",
             "configurePreset": "debug"
+        },
+        {
+            "name": "lint",
+            "displayName": "Linting",
+            "configurePreset": "lint"
         },
         {
             "name": "opt",

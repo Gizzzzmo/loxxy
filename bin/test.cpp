@@ -38,6 +38,9 @@ int main() {
 
     std::cout << blub << " " << blab << "\n";
 
+    variant<int, double> yeet{0.8};
+    yeet = 10;
+
     
     // .if (std::holds_alternative<int>(str)) {
     //     std::cout << "hoi" << std::endl;

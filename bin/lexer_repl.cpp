@@ -5,8 +5,14 @@ import ast;
 
 using namespace loxxy;
 
+struct printing_stream {
+    template<typename... Args>
+    void emplace(Args&&... args) {
+        std::cout << Token(std::forward<Args>(args)...) << std::endl;
+    }
+};
 
-int main(int argc, const char** argv) {
+auto main(int argc, const char** argv) -> int {
     std::ifstream file;
     if (argc < 2) {
         file.open("/dev/stdin");
@@ -19,10 +25,7 @@ int main(int argc, const char** argv) {
         }
     }
 
-    Loxxer lexer(std::move(file), [](Token&& token) {
-        std::cout << token << std::endl;
-        return true;
-    });
+    Loxxer lexer(std::move(file), printing_stream{});
 
     lexer.scanTokens();
     return 0;

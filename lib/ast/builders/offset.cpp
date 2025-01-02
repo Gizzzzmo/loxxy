@@ -29,10 +29,14 @@ struct multi_vector {
 
 template<
     typename offset_t,
-    typename Payload = empty,
-    PayloadBuilder<Payload, OffsetPointerIndirection<offset_t>, true> Builder = DefaultPayloadBuilder<Payload>
+    typename _Payload = empty,
+    PayloadBuilder<_Payload, OffsetPointerIndirection<offset_t>, true> Builder = DefaultPayloadBuilder<_Payload>
 >
 struct OffsetBuilder {
+    using Payload = _Payload;
+    using Indirection = OffsetPointerIndirection<offset_t>;
+    static constexpr bool ptr_variant = true;
+
     USING_FAMILY(Payload, OffsetPointerIndirection<offset_t>, true);
 
     template<typename... Args>
@@ -62,8 +66,11 @@ struct OffsetBuilder {
             NumberExpr,
             BoolExpr,
             NilExpr,
-            PrintStmt,
-            ExpressionStmt
+            VarExpr,
+            AssignExpr,
+            PrintStmt,  
+            ExpressionStmt,
+            VarDecl
         > nodes;
         
         Builder payload_builder;

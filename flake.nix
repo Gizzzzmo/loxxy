@@ -65,6 +65,34 @@
         export PS1="$(echo -e '\u${icon}') {\[$(tput sgr0)\]\[\033[38;5;228m\]\w\[$(tput sgr0)\]\[\033[38;5;15m\]} (${name}) \\$ \[$(tput sgr0)\]"
       '';
     };
+    devShells.clang-19 = pkgs.mkShell.override { stdenv = pkgs.llvmPackages_19.stdenv; } rec {
+      # Update the name to something that suites your project.
+      name = "loxxy-clang-19";
+
+
+      packages = with pkgs; [
+        # Development Tools
+        cmake
+        cmakeCurses
+        ninja
+        llvmPackages_19.clang-tools
+        llvmPackages_19.bintools
+        # Development time dependencies
+        gtest
+      ];
+
+      buildInputs = with pkgs; [
+        
+      ];
+
+      # Setting up the environment variables you need during
+      # development.
+      shellHook = let
+        icon = "f121";
+      in ''
+        export PS1="$(echo -e '\u${icon}') {\[$(tput sgr0)\]\[\033[38;5;228m\]\w\[$(tput sgr0)\]\[\033[38;5;15m\]} (${name}) \\$ \[$(tput sgr0)\]"
+      '';
+    };
 
     devShells.gcc = pkgs.mkShell.override { stdenv = pkgs.gcc14Stdenv; } rec {
       # Update the name to something that suites your project.

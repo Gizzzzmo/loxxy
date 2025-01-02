@@ -17,7 +17,8 @@ using std::make_unique;
 export namespace loxxy {
 
 template<typename T, typename Payload, typename Indirection, bool ptr_variant>
-concept NodeBuilder = requires(
+concept NodeBuilder = std::same_as<Payload, typename T::Payload> && std::same_as<Indirection, typename T::Indirection>
+    && (ptr_variant == T::ptr_variant) && requires(
     T t,
     ExprPointer<Payload, Indirection, ptr_variant>&& node,
     Token token,
@@ -58,7 +59,8 @@ concept NodeBuilder = requires(
 };
 
 template<typename T, typename Payload, typename Indirection, bool ptr_variant>
-concept NodeCopier = requires(
+concept NodeCopier = std::same_as<Payload, typename T::Payload> && std::same_as<Indirection, typename T::Indirection>
+    && (ptr_variant == T::ptr_variant) && requires(
     T t,
     ExprPointer<Payload, Indirection, ptr_variant>&& node,
     Token token,

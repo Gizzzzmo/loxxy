@@ -25,10 +25,10 @@ enum TokenType {
     AND, CLASS, ELSE, FALSE, FOR, FUN, IF, NIL, OR,
     PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
     
-    END_OF_FILE
+    END_OF_FILE, NEW_LINE
 };
 
-inline std::ostream& operator<<(std::ostream& ostream, TokenType type) {
+inline auto operator<<(std::ostream& ostream, TokenType type) -> std::ostream& {
     switch (type) {
     case LEFT_PAREN:
         ostream << "LEFT_PAREN";
@@ -150,6 +150,9 @@ inline std::ostream& operator<<(std::ostream& ostream, TokenType type) {
     case END_OF_FILE:
         ostream << "END_OF_FILE";
         break;
+    case NEW_LINE:
+        ostream << "NEW_LINE";
+        break;
     }
     return ostream;
 };
@@ -175,7 +178,7 @@ class Token {
         literal(literal),
         line(line), column(column) { }
 
-        friend std::ostream& operator<<(std::ostream& ostream, const Token& token) {
+        friend auto operator<<(std::ostream& ostream, const Token& token) -> std::ostream& {
             ostream << token.type << " " << *token.lexeme;
             if (token.type == TokenType::STRING)
                 ostream << " " << *token.literal.string; 
@@ -185,23 +188,23 @@ class Token {
             return ostream;
         }
 
-        TokenType getType() const {
+        auto getType() const -> TokenType {
             return type;
         }
 
-        const persistent_string<char>& getLexeme() const {
+        auto getLexeme() const -> const persistent_string<char>& {
             return *lexeme;
         }
 
-        const Literal& getLiteral() const {
+        auto getLiteral() const -> const Literal&  {
             return literal;
         }
 
-        int getLine() const {
+        auto getLine() const -> int {
             return line;
         }
 
-        int getColumn() const {
+        auto getColumn() const -> int {
             return column;
         }
         

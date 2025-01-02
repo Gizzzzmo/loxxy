@@ -217,7 +217,6 @@ struct IndirectVisitorImpl {
         decltype(auto) unmapped = unmap<T>(mapped);
         return (*static_cast<Visitor*>(this))(unmapped);
     }
-    
 
     template<typename... Ts> requires(IsIndirection<Indirection, Resolver, variant<Ts...>>)
     decltype(auto) visit(Mapped<variant<Ts...>>& mapped) {
@@ -248,6 +247,7 @@ struct IndirectVisitorImpl {
         decltype(auto) unmap(Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped);
         }
+
         template<typename T> requires (!same_as<Resolver, void>)
         decltype(auto) unmap(Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped, reinterpret_cast<ResolverHolder<Resolver>*>(this)->resolver);
@@ -257,6 +257,7 @@ struct IndirectVisitorImpl {
         decltype(auto) unmap(const Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped);
         }
+
         template<typename T> requires (!same_as<Resolver, void> && !is_const_v<Mapped<T>>)
         decltype(auto) unmap(const Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped, reinterpret_cast<ResolverHolder<Resolver>*>(this)->resolver);
@@ -266,6 +267,7 @@ struct IndirectVisitorImpl {
         decltype(auto) unmap(volatile Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped);
         }
+
         template<typename T> requires (!same_as<Resolver, void> && !is_volatile_v<Mapped<T>>)
         decltype(auto) unmap(volatile Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped, reinterpret_cast<ResolverHolder<Resolver>*>(this)->resolver);
@@ -275,6 +277,7 @@ struct IndirectVisitorImpl {
         decltype(auto) unmap(const volatile Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped);
         }
+
         template<typename T> requires (!same_as<Resolver, void> && !is_const_v<Mapped<T>> && !is_volatile_v<Mapped<T>>)
         decltype(auto) unmap(const volatile Mapped<T>& mapped) {
             return Indirection::template get<T>(mapped, reinterpret_cast<ResolverHolder<Resolver>*>(this)->resolver);

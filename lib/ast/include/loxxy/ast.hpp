@@ -8,6 +8,9 @@
     using NumberExpr = NumberExpr<Payload, Indirection, ptr_variant>; \
     using BoolExpr = BoolExpr<Payload, Indirection, ptr_variant>; \
     using NilExpr = NilExpr<Payload, Indirection, ptr_variant>; \
+    using VarExpr = VarExpr<Payload, Indirection, ptr_variant>;\
+    using AssignExpr = AssignExpr<Payload, Indirection, ptr_variant>;\
     using PrintStmt = PrintStmt<Payload, Indirection, ptr_variant>; \
     using ExpressionStmt = ExpressionStmt<Payload, Indirection, ptr_variant>; \
+    using VarDecl = VarDecl<Payload, Indirection, ptr_variant>;\
     using TURoot = TURoot<Payload, Indirection, ptr_variant>

@@ -1,6 +1,7 @@
 module;
 
 #include <iostream>
+#include "loxxy/ast.hpp"
 
 export module ast.printer;
 import ast;
@@ -21,6 +22,7 @@ struct ASTPrinter :
 {
     using Self = ASTPrinter<Payload, Indirection, ptr_variant, Resolver>;
     using Parent = IndirectVisitor<Self, Resolver, Indirection>;
+    USING_FAMILY(Payload, Indirection, ptr_variant);
     
     using Parent::operator();
 
@@ -28,7 +30,7 @@ struct ASTPrinter :
     ASTPrinter(std::ostream& stream, Args&&... args) : Parent(std::forward<Args>(args)...),
         stream(stream) {}
 
-    void operator()(const BinaryExpr<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const BinaryExpr& node) {
         stream << node.op.getLexeme() << " (";
         visit(*this, node.lhs);
         stream << ") (";
@@ -36,41 +38,62 @@ struct ASTPrinter :
         stream << ")";
     }
 
-    void operator()(const GroupingExpr<Payload, Indirection, ptr_variant>& node) {
-        stream << "(";
+    void operator()(const GroupingExpr& node) {
+        stream << "( ";
         visit(*this, node.expr);
-        stream << ")";
+        stream << " )";
     }
 
-    void operator()(const StringExpr<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const StringExpr& node) {
         stream << "\"" << *node.string << "\"";
     }
-    void operator()(const NumberExpr<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const NumberExpr& node) {
         stream << node.x;
     }
-    void operator()(const UnaryExpr<Payload, Indirection, ptr_variant>& node) {
-        stream << node.op.getLexeme() << " (";
+    void operator()(const UnaryExpr& node) {
+        stream << node.op.getLexeme() << " ( ";
         visit(*this, node.expr);
-        stream << ") ";
+        stream << " ) ";
     }
-    void operator()(const BoolExpr<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const BoolExpr& node) {
         stream << (node.x ? "true" : "false");
     }
 
-    void operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const NilExpr& node) {
         stream << "nil";
     }
 
-    void operator()(const PrintStmt<Payload, Indirection, ptr_variant>& node) {
-        stream << "PRINT ( ";
-        visit(*this, node.expr);
-        stream << " )";
+    void operator()(const VarExpr& node) {
+        stream << *node.identifier;
     }
 
-    void operator()(const ExpressionStmt<Payload, Indirection, ptr_variant>& node) {
-        stream << "EXPR_STMT (";
+    void operator()(const AssignExpr& node) {
+        stream << "ASSIGN_EXPR ( "  << *node.identifier;
+        stream << " = ";
         visit(*this, node.expr);
-        stream << " )";
+        stream << " ) ";
+    }
+
+    void operator()(const PrintStmt& node) {
+        stream << "PRINT ( ";
+        visit(*this, node.expr);
+        stream << " ) ";
+    }
+
+    void operator()(const ExpressionStmt& node) {
+        stream << "EXPR_STMT ( ";
+        visit(*this, node.expr);
+        stream << " ) ";
+    }
+
+    void operator()(const VarDecl& node) {
+        stream << "VAR_DECL ( " << *node.identifier;
+        if (node.expr) {
+            stream << " = ( ";
+            visit(*this, node.expr.value());
+            stream << " ) ";
+        }
+        stream << " ) ";
     }
     private:
         std::ostream& stream;

@@ -12,11 +12,14 @@ using std::make_shared;
 export namespace loxxy {
 
 template<
-    typename Payload = empty,
-    bool ptr_variant = true,
-    PayloadBuilder<Payload, SharedPtrIndirection, ptr_variant> Builder = DefaultPayloadBuilder<Payload>
+    typename _Payload = empty,
+    bool _ptr_variant = true,
+    PayloadBuilder<_Payload, SharedPtrIndirection, _ptr_variant> Builder = DefaultPayloadBuilder<_Payload>
 >
 struct RCNodeBuilder {
+    using Payload = _Payload;
+    using Indirection = SharedPtrIndirection;
+    static constexpr bool ptr_variant = _ptr_variant;
     Builder payload_builder;
 
     template<typename... Args>

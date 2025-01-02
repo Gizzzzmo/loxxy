@@ -4,19 +4,19 @@
 #include <vector>
 
 import lexer;
+import utils.generic_stream;
 import ast;
 
 using namespace loxxy;
 
 TEST(LoxxerTest, SingleCharTokens) {
     std::stringstream ss("(){},.-+;/*");
-    std::vector<Token> tokens;
-    Loxxer<std::stringstream> loxxer(std::move(ss), [&tokens](Token&& token){
-        tokens.push_back(std::move(token));
-        return true;
-    });
+    utils::generic_stream<std::vector, Token> token_stream;
+    Loxxer loxxer(std::move(ss), token_stream);
 
     loxxer.scanTokens();
+
+    const auto& tokens = token_stream.v;
     EXPECT_EQ(tokens.size(), 12);
     EXPECT_EQ(tokens[0].getType(), TokenType::LEFT_PAREN);
     EXPECT_EQ(tokens[1].getType(), TokenType::RIGHT_PAREN);
@@ -34,14 +34,12 @@ TEST(LoxxerTest, SingleCharTokens) {
 
 TEST(LoxxerTest, TwoCharTokens) {
     std::stringstream ss("<=>===!=");
-    std::vector<Token> tokens;
-    Loxxer<std::stringstream> loxxer(std::move(ss), [&tokens](Token&& token){
-        tokens.push_back(std::move(token));
-        return true;
-    });
+    utils::generic_stream<std::vector, Token> token_stream;
+    Loxxer loxxer(std::move(ss), token_stream);
 
     loxxer.scanTokens();
 
+    const auto& tokens = token_stream.v;
     EXPECT_EQ(tokens.size(), 5);
     EXPECT_EQ(tokens[0].getType(), TokenType::LESS_EQUAL);
     EXPECT_EQ(tokens[1].getType(), TokenType::GREATER_EQUAL);
@@ -52,14 +50,12 @@ TEST(LoxxerTest, TwoCharTokens) {
 
 TEST(LoxxerTest, Keywords) {
     std::stringstream ss("and class else false for fun if nil or print return super this true var while");
-    std::vector<Token> tokens;
-    Loxxer<std::stringstream> loxxer(std::move(ss), [&tokens](Token&& token){
-        tokens.push_back(std::move(token));
-        return true;
-    });
+    utils::generic_stream<std::vector, Token> token_stream;
+    Loxxer loxxer(std::move(ss), token_stream);
 
     loxxer.scanTokens();
 
+    const auto& tokens = token_stream.v;
     EXPECT_EQ(tokens.size(), 17);
     EXPECT_EQ(tokens[0].getType(), TokenType::AND);
     EXPECT_EQ(tokens[1].getType(), TokenType::CLASS);
@@ -82,14 +78,12 @@ TEST(LoxxerTest, Keywords) {
 
 TEST(LoxxerTest, Identifiers) {
     std::stringstream ss("blib blab blub blibblab slurp");
-    std::vector<Token> tokens;
-    Loxxer<std::stringstream> loxxer(std::move(ss), [&tokens](Token&& token){
-        tokens.push_back(std::move(token));
-        return true;
-    });
+    utils::generic_stream<std::vector, Token> token_stream;
+    Loxxer loxxer(std::move(ss), token_stream);
 
     loxxer.scanTokens();
 
+    auto& tokens = token_stream.v;
     EXPECT_EQ(tokens.size(), 6);
     EXPECT_EQ(tokens.back().getType(), TokenType::END_OF_FILE);
     tokens.pop_back();
@@ -100,14 +94,12 @@ TEST(LoxxerTest, Identifiers) {
 
 TEST(LoxxerTest, StringLiterals) {
     std::stringstream ss("\"blib\"\"blab\"\"blub\"\"blibblab\"\"slurp\"");
-    std::vector<Token> tokens;
-    Loxxer<std::stringstream> loxxer(std::move(ss), [&tokens](Token&& token){
-        tokens.push_back(std::move(token));
-        return true;
-    });
+    utils::generic_stream<std::vector, Token> token_stream;
+    Loxxer loxxer(std::move(ss), token_stream);
 
     loxxer.scanTokens();
 
+    auto& tokens = token_stream.v;
     EXPECT_EQ(tokens.size(), 6);
     EXPECT_EQ(tokens.back().getType(), TokenType::END_OF_FILE);
     tokens.pop_back();
@@ -118,15 +110,13 @@ TEST(LoxxerTest, StringLiterals) {
 
 TEST(LoxxerTest, NumberLiterals) {
     std::stringstream ss("0 1 90 278 3.66 555.4");
-    std::vector<Token> tokens;
-    Loxxer<std::stringstream> loxxer(std::move(ss), [&tokens](Token&& token){
-        tokens.push_back(std::move(token));
-        return true;
-    });
+    utils::generic_stream<std::vector, Token> token_stream;
+    Loxxer loxxer(std::move(ss), token_stream);
 
     loxxer.scanTokens();
 
-    EXPECT_EQ(tokens.size(), 6);
+    auto& tokens = token_stream.v;
+    EXPECT_EQ(tokens.size(), 7);
     EXPECT_EQ(tokens.back().getType(), TokenType::END_OF_FILE);
     tokens.pop_back();
     for (const Token& token : tokens) {

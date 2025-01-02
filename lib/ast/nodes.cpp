@@ -4,6 +4,7 @@ module;
 #include <memory>
 #include <type_traits>
 #include <concepts>
+#include <optional>
 #include <string>
 
 export module ast:nodes;
@@ -44,6 +45,10 @@ template<typename Payload = empty, typename Indirection = UniquePtrIndirection, 
 struct BoolExpr;
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 struct NilExpr;
+template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
+struct VarExpr;
+template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
+struct AssignExpr;
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 using Expression = variant<
@@ -53,7 +58,9 @@ using Expression = variant<
     NumberExpr<Payload, Indirection, ptr_variant>,
     StringExpr<Payload, Indirection, ptr_variant>,
     BoolExpr<Payload, Indirection, ptr_variant>,
-    NilExpr<Payload, Indirection, ptr_variant>
+    NilExpr<Payload, Indirection, ptr_variant>,
+    VarExpr<Payload, Indirection, ptr_variant>,
+    AssignExpr<Payload, Indirection, ptr_variant>
 >;
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
@@ -107,6 +114,18 @@ struct NilExpr {
     Payload payload;
 };
 
+template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
+struct VarExpr {
+    Payload payload;
+    const persistent_string<>* identifier;
+};
+
+template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
+struct AssignExpr {
+    Payload payload;
+    const persistent_string<>* identifier;
+    ExprPointer<Payload, Indirection, ptr_variant> expr;
+};
 
 template<typename Payload = empty, bool ptr_variant = true>
 using BoxedExpr = ExprPointer<Payload, UniquePtrIndirection, ptr_variant>;
@@ -127,9 +146,17 @@ struct PrintStmt {
 };
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
+struct VarDecl {
+    Payload payload;
+    const persistent_string<>* identifier;
+    std::optional<ExprPointer<Payload, Indirection, ptr_variant>> expr;
+};
+
+template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>
 using Statement = variant<
     ExpressionStmt<Payload, Indirection, ptr_variant>,
-    PrintStmt<Payload, Indirection, ptr_variant>
+    PrintStmt<Payload, Indirection, ptr_variant>,
+    VarDecl<Payload, Indirection, ptr_variant>
 >;
 
 template<typename Payload = empty, typename Indirection = UniquePtrIndirection, bool ptr_variant = true>

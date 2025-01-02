@@ -1,16 +1,16 @@
 #include <fstream>
 #include <thread>
 #include <iostream>
-#include <vector>
-#include <utility>
 
 import utils.tqstream;
 import utils.stupid_type_traits;
+import utils.variant;
 import parser.rd;
 import lexer;
 import ast;
 import ast.boxed_node_builder;
 import ast.printer;
+import ast.interpreter;
 
 using namespace loxxy;
 using namespace utils;
@@ -40,12 +40,13 @@ auto main (int argc, const char** argv) -> int {
         token_stream.flush();
     });
     std::thread parse_thread([&parser](){
+        Interpreter<empty, UniquePtrIndirection, true> interpreter{};
         while(true) {
             auto root = parser.parse();
             if (root.statements.size() == 0)
                 break;
             for (auto& stmt : root.statements) {
-                std::cout << stmt << "\n";
+                utils::visit(interpreter, stmt);
             }
         }
     });
@@ -55,3 +56,4 @@ auto main (int argc, const char** argv) -> int {
 
     return 0;
 }
+

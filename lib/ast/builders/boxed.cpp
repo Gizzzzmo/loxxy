@@ -14,11 +14,15 @@ using std::make_unique;
 export namespace loxxy {
 
 template<
-    typename Payload = empty,
-    bool ptr_variant = true,
-    PayloadBuilder<Payload, UniquePtrIndirection, ptr_variant> Builder = DefaultPayloadBuilder<Payload>
+    typename _Payload = empty,
+    bool _ptr_variant = true,
+    PayloadBuilder<_Payload, UniquePtrIndirection, _ptr_variant> Builder = DefaultPayloadBuilder<_Payload>
 >
 struct BoxedNodeBuilder {
+    using Payload = _Payload;
+    using Indirection = UniquePtrIndirection;
+    static constexpr bool ptr_variant = _ptr_variant;
+
     Builder payload_builder;
     Interpreter<Payload, UniquePtrIndirection, ptr_variant, void> interpreter;
 
@@ -31,12 +35,6 @@ struct BoxedNodeBuilder {
             payload_builder(mark<Out>, std::forward<Args>(args)...),
             std::forward<Args>(args)...
         );
-        //try {
-        //    Value value = utils::visit(interpreter, node);
-        //    std::cout << value << std::endl;
-        //} catch (const TypeError& err) {
-        //    std::cerr << err.what() << std::endl;
-        //}
 
         return node;
     }

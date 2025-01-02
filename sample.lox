@@ -1,6 +1,7 @@
-fun doSth(a, b) {
-    print a;
+//fun doSth(a, b) {
+    
     print "blub";
     print 0x12;
     print 12;
-}
+//}
+

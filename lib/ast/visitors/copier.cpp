@@ -2,6 +2,7 @@ module;
 #include <concepts>
 #include <utility>
 #include <memory>
+#include "loxxy/ast.hpp"
 
 export module ast.copier;
 import ast;
@@ -17,63 +18,118 @@ template<
     typename Payload,
     typename Indirection,
     bool ptr_variant,
-    typename STNPtr,
-    NodeBuilder<Payload, Indirection, ptr_variant> Builder,
+    typename Builder,
     typename Resolver = void
 >
 struct ASTCopier
 : public IndirectVisitor<
-    ASTCopier<Payload, Indirection, ptr_variant, STNPtr, Builder, Resolver>,
+    ASTCopier<Payload, Indirection, ptr_variant, Builder, Resolver>,
     Resolver,
     Indirection
 > {
-    using Self = ASTCopier<Payload, Indirection, ptr_variant, STNPtr, Builder, Resolver>;
+    using Target = Family<typename Builder::Payload, typename Builder::Indirection, Builder::ptr_variant>;
+
+    using Self = ASTCopier<Payload, Indirection, ptr_variant, Builder, Resolver>;
     using Parent = IndirectVisitor<Self, Resolver, Indirection>;
+    USING_FAMILY(Payload, Indirection, ptr_variant);
+
     using Parent::operator();
+
 
     template<NodeBuilder<Payload, Indirection, ptr_variant> Builder_, typename... Args>
     ASTCopier(Builder_&& builder, Args&&... args) : builder(std::forward<Builder_>(builder)),
         Parent(std::forward<Args>(args)...) {}
 
-    STNPtr operator()(const BinaryExpr<Payload, Indirection, ptr_variant>& node) {
+    auto operator()(const BinaryExpr& node) {
         auto copy_lhs = visit(*this, node.lhs);
         auto copy_rhs = visit(*this, node.rhs);
         
         return builder(
+            mark<typename Target::BinaryExpr>,
             std::move(copy_lhs),
             std::move(copy_rhs),
             node.op
         );
     }
 
-    STNPtr operator()(const GroupingExpr<Payload, Indirection, ptr_variant>& node) {
+    auto operator()(const GroupingExpr& node) {
         return builder(
+            mark<typename Target::GroupingExpr>,
             visit(*this, node.expr)
         );
     }
 
-    STNPtr operator()(const UnaryExpr<Payload, Indirection, ptr_variant>& node) {
+    auto operator()(const UnaryExpr& node) {
         return builder(
+            mark<typename Target::UnaryExpr>,
             visit(*this, node.expr),
             node.op
         );
     }
 
-    STNPtr operator()(const NumberExpr<Payload, Indirection, ptr_variant>& node) {
-        return builder(node.x);
+    auto operator()(const NumberExpr& node) {
+        return builder(
+            mark<typename Target::NumberExpr>,
+            node.x
+        );
     }
 
-    STNPtr operator()(const StringExpr<Payload, Indirection, ptr_variant>& node) {
-        return builder(node.string);
+    auto operator()(const StringExpr& node) {
+        return builder(
+            mark<typename Target::StringExpr>,
+            node.string
+        );
     }
 
-    STNPtr operator()(const BoolExpr<Payload, Indirection, ptr_variant>& node) {
-        return builder(node.x);
+    auto operator()(const BoolExpr& node) {
+        return builder(
+            mark<typename Target::BoolExpr>,
+            node.x
+        );
     }
 
-    STNPtr operator()(const NilExpr<Payload, Indirection, ptr_variant>&) {
-        return builder();
+    auto operator()(const NilExpr&) {
+        return builder(mark<typename Target::NilExpr>);
     }
+
+    auto operator()(const VarExpr& node) {
+        return builder(
+            mark<typename Target::VarExpr>,
+            node.identifier
+        );
+    }
+
+    auto operator()(const AssignExpr& node) {
+        return builder(
+            mark<typename Target::AssignExpr>,
+            node.identifier,
+            node.expr
+        );
+
+    }
+
+    auto operator()(const ExpressionStmt& node) {
+        return builder(
+            mark<typename Target::ExpressionStmt>,
+            node.expr
+        );
+    }
+    
+    auto operator()(const PrintStmt& node) {
+        return builder(
+            mark<typename Target::PrintStmt>,
+            node.expr
+        );
+    }
+
+    auto operator()(const VarDecl& node) {
+        return builder(
+            mark<typename Target::VarDecl>,
+            node.identifier,
+            node.expr
+        );
+    }
+
     private:
         Builder builder;
 

@@ -1,4 +1,5 @@
 module;
+#include <string_view>
 #include <type_traits>
 #include <exception>
 #include <stdexcept>
@@ -7,10 +8,15 @@ module;
 #include <optional>
 #include <string>
 #include <concepts>
+#include <iostream>
+#include "loxxy/ast.hpp"
+#include <map>
+//#include "tsl/htrie_map.h"
 
 export module ast.interpreter;
 import ast;
 import utils.stupid_type_traits;
+import utils.string_store;
 import utils.variant;
 
 using utils::IndirectVisitor;
@@ -26,6 +32,7 @@ template<typename T, typename... U>
 concept any_ref = (same_as<std::remove_cvref_t<T>, std::remove_cvref_t<U>> || ...) && std::is_reference_v<T>;
 
 struct TypeError : std::runtime_error { using std::runtime_error::runtime_error; };
+struct UndefinedVariable : std::runtime_error { using std::runtime_error::runtime_error; };
 
 struct Equals {
     bool operator()(nullptr_t, nullptr_t) { return true; }
@@ -94,32 +101,45 @@ struct ValuePrinter {
 };
 
 std::ostream& operator<<(std::ostream& ostream, const Value& value) {
-    //if (std::holds_alternative<double>(value))
-    //    ostream << std::get<double>(value);
-    //if (std::holds_alternative<string>(value))
-    //    ostream << std::get<string>(value);
-    //if (std::holds_alternative<bool>(value))
-    //    ostream << (std::get<bool>(value) ? "true" : "false");
-    //if (std::holds_alternative<nullptr_t>(value))
-    //    ostream << "nil";
-
     utils::visit(ValuePrinter{ostream}, value);
     return ostream;
 }
 
 
-template<typename Payload, typename Indirection, bool ptr_variant, typename Resolver>
+template<typename Payload, typename Indirection, bool ptr_variant, typename Resolver = void>
 struct Interpreter : IndirectVisitor<
     Interpreter<Payload, Indirection, ptr_variant, Resolver>,
     Resolver,
     Indirection
 > {
+    USING_FAMILY(Payload, Indirection, ptr_variant);
     using Self = Interpreter<Payload, Indirection, ptr_variant, Resolver>;
     using Parent = IndirectVisitor<Self, Resolver, Indirection>;
     using Parent::operator();
     using Parent::Parent;
 
-    Value operator()(const BinaryExpr<Payload, Indirection, ptr_variant>& node) {
+    void operator()(const ExpressionStmt& node) {
+        utils::visit(*this, node.expr);
+        return;
+    }
+
+    void operator()(const PrintStmt& node) {
+        std::cout << utils::visit(*this, node.expr) << std::endl;
+    }
+
+    void operator()(const VarDecl& node) {
+        Value init = nullptr;
+        if (node.expr.has_value())
+            init = utils::visit(*this, node.expr.value());
+        
+        variables[node.identifier] = std::move(init);
+    }
+
+    template<typename T>
+    void operator()(const T&) {
+    }
+
+    Value operator()(const BinaryExpr& node) {
         auto lhs = utils::visit(*this, node.lhs);
         auto rhs = utils::visit(*this, node.rhs);
         switch (node.op.getType()) {
@@ -148,11 +168,11 @@ struct Interpreter : IndirectVisitor<
         }
     }
 
-    Value operator()(const GroupingExpr<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const GroupingExpr& node) {
         return utils::visit(*this, node.expr);
     }
 
-    Value operator()(const UnaryExpr<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const UnaryExpr& node) {
         Value rhs = visit(*this, node.expr);
         switch (node.op.getType()) {
             case MINUS:
@@ -164,22 +184,46 @@ struct Interpreter : IndirectVisitor<
         }
     }
 
-    Value operator()(const NumberExpr<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const NumberExpr& node) {
         return Value{node.x};
     }
 
-    Value operator()(const StringExpr<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const StringExpr& node) {
         return Value{string(*node.string)};
     }
 
-    Value operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const NilExpr& node) {
         return Value{nullptr};
     }
 
-    Value operator()(const BoolExpr<Payload, Indirection, ptr_variant>& node) {
+    Value operator()(const BoolExpr& node) {
         return Value{node.x};
     }
 
+    Value operator()(const VarExpr& node) {
+        if (variables.find(node.identifier) == variables.end()) {
+            std::string error{};
+            error.append(*node.identifier);
+            error.append(" not defined");
+            throw UndefinedVariable(error);
+        }
+        return variables[node.identifier];
+    }
+
+    Value operator()(const AssignExpr& node) {
+        auto it = variables.find(node.identifier);
+        if (it == variables.end()) {
+            std::string error{};
+            error.append(*node.identifier);
+            error.append(" not defined");
+            throw UndefinedVariable(error);
+        }
+        it->second = utils::visit(*this, node.expr);
+        return it->second;
+    }
+
+    private:
+        std::map<const persistent_string<>*, Value> variables; 
 };
 
 }

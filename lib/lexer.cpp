@@ -1,5 +1,6 @@
 module;
 
+#include <type_traits>
 #include <concepts>
 #include <cstddef>
 #include <cstring>
@@ -11,6 +12,7 @@ module;
 #include <array>
 #include <functional>
 #include <iostream>
+#include <vector>
 
 #include "tsl/htrie_map.h"
 
@@ -136,22 +138,26 @@ static const CompileTimeInit init = getInitialIdStore();
 
 export namespace loxxy {
 
-template<typename istream = std::ifstream>
+template<typename istream, typename ostream>
 class Loxxer {
 
     public:
-        Loxxer(istream&& file, std::function<bool(Token&&)> sink, size_t line = 0, size_t column = 0)
-        : file(std::move(file)), sink(sink), line(line), column(column) {
+        template<typename istream_ref, typename ostream_ref>
+        Loxxer(istream_ref&& file, ostream_ref&& sink, size_t line = 0, size_t column = 0)
+        : file(std::forward<istream_ref>(file)), sink(std::forward<ostream_ref>(sink)), line(line), column(column) {
             initStoreAndTable();
         }
 
-        Loxxer(const std::filesystem::path& filepath, std::function<bool(Token&&)> sink)
+        template<typename ostream_ref>
+        Loxxer(const std::filesystem::path& filepath, ostream_ref&& sink)
         requires (std::same_as<istream, std::ifstream>)
-        : file(filepath), sink(sink), line(0), column(0) {
+        : file(filepath), sink(std::forward<ostream_ref>(sink)), line(0), column(0) {
             initStoreAndTable();
         }
 
         bool scanTokens() {
+            done = false;
+
             while(!file.eof() && !file.fail() && !done) {
                 scanToken();
             }
@@ -171,14 +177,17 @@ class Loxxer {
             while(!file.eof() && !file.fail() && !done) {
                 scanToken();
                 if (last_line != line)
-                    break;
+                    addToken(
+                        NEW_LINE ,
+                        reinterpret_cast<persistent_string<char>*>(init.start_simple)
+                    );
 
                 last_line = line;
             }
 
             if (file.eof())
                 addToken(
-                    END_OF_FILE,
+                    END_OF_FILE ,
                     reinterpret_cast<persistent_string<char>*>(init.start_simple)
                 );
 
@@ -214,7 +223,7 @@ class Loxxer {
             TokenType type,
             const persistent_string<char>* lexeme,
             Literal literal = Literal()
-        ) { sink(Token(type, lexeme, literal, line, column)); }
+        ) { sink.emplace(Token(type, lexeme, literal, line, column)); }
 
         static bool isAlpha(char c) { 
             return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
@@ -630,7 +639,7 @@ class Loxxer {
         }
         istream file;
 
-        std::function<bool(Token&&)> sink;
+        ostream sink;
         size_t line;
         size_t column;
         bool done = false;
@@ -641,5 +650,11 @@ class Loxxer {
         persistent_string_store<char> lex_store;
         persistent_string_store<char> string_store;
 };
+
+template<typename istream_ref, typename ostream_ref>
+Loxxer(istream_ref&& file, ostream_ref&& sink, size_t line = 0, size_t column = 0) -> Loxxer<istream_ref, ostream_ref>;
+
+template<typename ostream_ref>
+Loxxer(const std::filesystem::path& filepath, ostream_ref&& sink) -> Loxxer<std::ifstream, ostream_ref>;
 
 } // namespace loxxy
