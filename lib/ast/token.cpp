@@ -12,20 +12,51 @@ export namespace loxxy {
 using namespace utils;
 
 enum TokenType {
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
+    LEFT_PAREN,
+    RIGHT_PAREN,
+    LEFT_BRACE,
+    RIGHT_BRACE,
+    COMMA,
+    DOT,
+    MINUS,
+    PLUS,
+    SEMICOLON,
+    SLASH,
+    STAR,
 
-    BANG, BANG_EQUAL,
-    EQUAL, EQUAL_EQUAL,
-    GREATER, GREATER_EQUAL,
-    LESS, LESS_EQUAL,
+    BANG,
+    BANG_EQUAL,
+    EQUAL,
+    EQUAL_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
+    LESS,
+    LESS_EQUAL,
 
-    IDENTIFIER, STRING, NUMBER, COMMENT,
+    IDENTIFIER,
+    STRING,
+    NUMBER,
+    COMMENT,
 
-    AND, CLASS, ELSE, FALSE, FOR, FUN, IF, NIL, OR,
-    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-    
-    END_OF_FILE, NEW_LINE
+    AND,
+    CLASS,
+    ELSE,
+    FALSE,
+    FOR,
+    FUN,
+    IF,
+    NIL,
+    OR,
+    PRINT,
+    RETURN,
+    SUPER,
+    THIS,
+    TRUE,
+    VAR,
+    WHILE,
+
+    END_OF_FILE,
+    NEW_LINE
 };
 
 inline auto operator<<(std::ostream& ostream, TokenType type) -> std::ostream& {
@@ -166,55 +197,36 @@ union Literal {
 };
 
 class Token {
-    public:
-        Token(
-            TokenType type,
-            const persistent_string<char>* lexeme,
-            Literal literal,
-            int line, int column
-        ) :
-        type(type),
-        lexeme(lexeme), 
-        literal(literal),
-        line(line), column(column) { }
+public:
+    Token(TokenType type, const persistent_string<char>* lexeme, Literal literal, int line, int column)
+        : type(type), lexeme(lexeme), literal(literal), line(line), column(column) {}
 
-        friend auto operator<<(std::ostream& ostream, const Token& token) -> std::ostream& {
-            ostream << token.type << " " << *token.lexeme;
-            if (token.type == TokenType::STRING)
-                ostream << " " << *token.literal.string; 
-            else if (token.type == TokenType::NUMBER)
-                ostream << " " << token.literal.number;
-            ostream << ":" << token.line << ","  << token.column ;
-            return ostream;
-        }
+    friend auto operator<<(std::ostream& ostream, const Token& token) -> std::ostream& {
+        ostream << token.type << " " << *token.lexeme;
+        if (token.type == TokenType::STRING)
+            ostream << " " << *token.literal.string;
+        else if (token.type == TokenType::NUMBER)
+            ostream << " " << token.literal.number;
+        ostream << ":" << token.line << "," << token.column;
+        return ostream;
+    }
 
-        auto getType() const -> TokenType {
-            return type;
-        }
+    auto getType() const -> TokenType { return type; }
 
-        auto getLexeme() const -> const persistent_string<char>& {
-            return *lexeme;
-        }
+    auto getLexeme() const -> const persistent_string<char>& { return *lexeme; }
 
-        auto getLiteral() const -> const Literal&  {
-            return literal;
-        }
+    auto getLiteral() const -> const Literal& { return literal; }
 
-        auto getLine() const -> int {
-            return line;
-        }
+    auto getLine() const -> int { return line; }
 
-        auto getColumn() const -> int {
-            return column;
-        }
-        
-    private:
-        TokenType type;
-        const persistent_string<char>* lexeme;
-        Literal literal;
-        int line;
-        int column;
+    auto getColumn() const -> int { return column; }
 
+private:
+    TokenType type;
+    const persistent_string<char>* lexeme;
+    Literal literal;
+    int line;
+    int column;
 };
 
 } // namespace loxxy

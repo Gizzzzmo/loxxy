@@ -1,7 +1,7 @@
 module;
+#include <iostream>
 #include <memory>
 #include <utility>
-#include <iostream>
 export module ast.boxed_node_builder;
 
 import ast;
@@ -13,11 +13,9 @@ using std::make_unique;
 
 export namespace loxxy {
 
-template<
-    typename _Payload = empty,
-    bool _ptr_variant = true,
-    PayloadBuilder<_Payload, UniquePtrIndirection, _ptr_variant> Builder = DefaultPayloadBuilder<_Payload>
->
+template <
+    typename _Payload = empty, bool _ptr_variant = true,
+    PayloadBuilder<_Payload, UniquePtrIndirection, _ptr_variant> Builder = DefaultPayloadBuilder<_Payload>>
 struct BoxedNodeBuilder {
     using Payload = _Payload;
     using Indirection = UniquePtrIndirection;
@@ -26,24 +24,21 @@ struct BoxedNodeBuilder {
     Builder payload_builder;
     Interpreter<Payload, UniquePtrIndirection, ptr_variant, void> interpreter;
 
-    template<typename... Args>
+    template <typename... Args>
     BoxedNodeBuilder(Args&&... args) : payload_builder(std::forward<Args>(args)...) {}
 
-    template<typename Out, typename... Args> 
+    template <typename Out, typename... Args>
     auto operator()(marker<Out>, Args&&... args) {
-        auto node = make_unique<Out>(
-            payload_builder(mark<Out>, std::forward<Args>(args)...),
-            std::forward<Args>(args)...
-        );
+        auto node =
+            make_unique<Out>(payload_builder(mark<Out>, std::forward<Args>(args)...), std::forward<Args>(args)...);
 
         return node;
     }
 
-    template<typename Out, typename... Args> 
+    template <typename Out, typename... Args>
     auto operator()(marker<Out>, const Payload& payload, Args&&... args) {
         return make_unique<ResolveNodeType<Payload, UniquePtrIndirection, true, Args...>>(
-            payload,
-            std::forward<Args>(args)...
+            payload, std::forward<Args>(args)...
         );
     }
 };

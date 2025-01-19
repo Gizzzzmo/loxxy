@@ -10,14 +10,8 @@ using utils::IndirectVisitor;
 
 export namespace loxxy {
 
-template<typename Payload, typename Indirection, bool ptr_variant, typename Resolver>
-struct Hasher : 
-    IndirectVisitor<
-        Hasher<Payload, Indirection, ptr_variant, Resolver>,
-        Resolver,
-        Indirection
-    >
-{
+template <typename Payload, typename Indirection, bool ptr_variant, typename Resolver>
+struct Hasher : IndirectVisitor<Hasher<Payload, Indirection, ptr_variant, Resolver>, Resolver, Indirection> {
     using Self = Hasher<Payload, Indirection, ptr_variant, Resolver>;
     using Parent = IndirectVisitor<Self, Resolver, Indirection>;
 
@@ -55,9 +49,7 @@ struct Hasher :
         return hash_ast(node.x, node.payload);
     }
 
-    uint64_t operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) { 
-        return hash_ast(node.payload);
-    }
+    uint64_t operator()(const NilExpr<Payload, Indirection, ptr_variant>& node) { return hash_ast(node.payload); }
 };
 
 } // namespace loxxy

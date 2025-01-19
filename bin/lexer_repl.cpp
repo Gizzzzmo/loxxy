@@ -6,7 +6,7 @@ import ast;
 using namespace loxxy;
 
 struct printing_stream {
-    template<typename... Args>
+    template <typename... Args>
     void emplace(Args&&... args) {
         std::cout << Token(std::forward<Args>(args)...) << std::endl;
     }
@@ -16,11 +16,10 @@ auto main(int argc, const char** argv) -> int {
     std::ifstream file;
     if (argc < 2) {
         file.open("/dev/stdin");
-    } 
-    else {
+    } else {
         file.open(argv[1]);
         if (file.fail()) {
-            std::cout << "File not found:\n" << argv[1] << std::endl; 
+            std::cout << "File not found:\n" << argv[1] << std::endl;
             return 1;
         }
     }

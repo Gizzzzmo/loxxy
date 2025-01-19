@@ -1,7 +1,7 @@
 module;
-#include <utility>
-#include <cstdint>
 #include <bits/functional_hash.h>
+#include <cstdint>
+#include <utility>
 export module ast.hash_payload_builder;
 import ast;
 import ast.extractor;
@@ -18,17 +18,15 @@ struct NodeHash {
 
 static_assert(ConcreteSTN<NilExpr<NodeHash>>);
 
-template<typename Indirection, bool ptr_variant, typename Resolver = void>
+template <typename Indirection, bool ptr_variant, typename Resolver = void>
 struct HashPayloadBuilder {
     using ExprPointer = ExprPointer<NodeHash, Indirection, ptr_variant>;
-    NodeHash payload(const ExprPointer& node) {
-        return utils::visit(extractor, node);
-    }
+    NodeHash payload(const ExprPointer& node) { return utils::visit(extractor, node); }
 
-    template<typename... Args>
+    template <typename... Args>
     HashPayloadBuilder(Args&&... args) : extractor(std::forward<Args>(args)...) {}
 
-    template<LiteralSTN NodeType, typename... Args>
+    template <LiteralSTN NodeType, typename... Args>
     NodeHash operator()(marker<NodeType>, Args&&... args) {
         uint64_t hash = hash_ast(std::forward<Args>(args)...);
         return hash;
@@ -48,19 +46,18 @@ struct HashPayloadBuilder {
         uint64_t hash = hash_ast(payload(lhs).hash, payload(rhs).hash, token);
         return hash;
     }
-    private:
-        Extractor<NodeHash, Indirection, ptr_variant, Resolver> extractor;
+
+private:
+    Extractor<NodeHash, Indirection, ptr_variant, Resolver> extractor;
 };
 
 } // namespace loxxy
 
 export namespace std {
 
-template<>
+template <>
 struct hash<loxxy::NodeHash> {
-    uint64_t operator()(loxxy::NodeHash) {
-        return 0;
-    }
+    uint64_t operator()(loxxy::NodeHash) { return 0; }
 };
 
 } // namespace std

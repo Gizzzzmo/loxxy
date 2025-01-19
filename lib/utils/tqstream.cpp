@@ -2,88 +2,92 @@ module;
 
 #include "rigtorp/SPSCQueue.h"
 #include <cassert>
-#include <thread>
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 export module utils.tqstream;
 
 export namespace utils {
 
-template<typename T, typename FlushPred = bool (*)(const T&)>
+template <typename T, typename FlushPred = bool (*)(const T&)>
 class tqstream {
-    public:
-        tqstream(size_t n, size_t buffer_size_in = 1, FlushPred flush_pred = [](const T&) { return false; })
-            : buffer_size_in(buffer_size_in), queue(n), flush_pred(flush_pred) {}
-        T get() {
-            T* ptr;
-            while((ptr = queue.front()) == nullptr)
-                std::this_thread::yield();
-            
-            T el = *ptr;
-            queue.pop();
+public:
+    tqstream(
+        size_t n, size_t buffer_size_in = 1, FlushPred flush_pred = [](const T&) { return false; }
+    )
+        : buffer_size_in(buffer_size_in), queue(n), flush_pred(flush_pred) {}
 
-            return el;
-        }
-        const T& peek() {
-            T* ptr;
-            while((ptr = queue.front()) == nullptr)
-                std::this_thread::yield();
+    T get() {
+        T* ptr;
+        while ((ptr = queue.front()) == nullptr)
+            std::this_thread::sleep_for(std::chrono::microseconds(250));
 
-            return *ptr;
-        }
+        T el = *ptr;
+        queue.pop();
 
-        void putback(T&& x) {
-            T* built = queue.build(std::move(x));
-            if (built == nullptr) {
+        return el;
+    }
 
-                size_t n_finished = queue.finish_build(buffer_size_in);
-                assert(n_finished == buffer_size_in || flushed);
-                bool success = queue.wait_reserve_build(buffer_size_in);
-#ifndef NDEBUG 
-                flushed = false;
-#endif
-                assert(success);
-                built = queue.build(std::move(x));
-                assert(built != nullptr);
-            }
-            if (flush_pred(*built))
-                flush(); 
-        }
+    const T& peek() {
+        T* ptr;
+        while ((ptr = queue.front()) == nullptr)
+            std::this_thread::sleep_for(std::chrono::microseconds(250));
 
-        template<typename... Args>
-        void emplace(Args&&... args) {
-            T* built = queue.build(std::forward<Args>(args)...);
-            if (built == nullptr) {
-                size_t n_finished = queue.finish_build(buffer_size_in);
-                assert(n_finished == buffer_size_in || flushed);
-                bool success = queue.wait_reserve_build(buffer_size_in);
-#ifndef NDEBUG 
-                flushed = false;
-#endif
-                assert(success);
-                built = queue.build(std::forward<Args>(args)...);
-                assert(built != nullptr);
-            }
-            if (flush_pred(*built))
-                flush();
-        }
+        return *ptr;
+    }
 
-        void flush() {
+    void putback(T&& x) {
+        T* built = queue.build(std::move(x));
+        if (built == nullptr) {
+
+            size_t n_finished = queue.finish_build(buffer_size_in);
+            assert(n_finished == buffer_size_in || flushed);
+            bool success = queue.wait_reserve_build(buffer_size_in);
 #ifndef NDEBUG
-            flushed = true;
+            flushed = false;
 #endif
-            queue.finish_build(buffer_size_in);
+            assert(success);
+            built = queue.build(std::move(x));
+            assert(built != nullptr);
         }
+        if (flush_pred(*built))
+            flush();
+    }
 
-    private:
-        size_t last_size;
-        size_t buffer_size_in; 
-        rigtorp::SPSCQueue<T> queue;
-        FlushPred flush_pred;
-#ifndef NDEBUG 
-        bool flushed = true;
+    template <typename... Args>
+    void emplace(Args&&... args) {
+        T* built = queue.build(std::forward<Args>(args)...);
+        if (built == nullptr) {
+            size_t n_finished = queue.finish_build(buffer_size_in);
+            assert(n_finished == buffer_size_in || flushed);
+            bool success = queue.wait_reserve_build(buffer_size_in);
+#ifndef NDEBUG
+            flushed = false;
+#endif
+            assert(success);
+            built = queue.build(std::forward<Args>(args)...);
+            assert(built != nullptr);
+        }
+        if (flush_pred(*built))
+            flush();
+    }
+
+    void flush() {
+#ifndef NDEBUG
+        flushed = true;
+#endif
+        queue.finish_build(buffer_size_in);
+    }
+
+private:
+    size_t last_size;
+    size_t buffer_size_in;
+    rigtorp::SPSCQueue<T> queue;
+    FlushPred flush_pred;
+#ifndef NDEBUG
+    bool flushed = true;
 #endif
 };
 
 } // namespace utils
-

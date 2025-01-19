@@ -1,27 +1,21 @@
-#include <type_traits>
-#include <utility>
 #include <cassert>
 #include <iostream>
+#include <type_traits>
+#include <utility>
 
 import utils.variant;
 
 using namespace utils;
-
 
 struct Test : WrappedVar<variant<int, double>> {
     using WrappedVar<variant<int, double>>::WrappedVar;
 };
 
 struct Visitor {
-    void operator()(int) {
-        std::cout << "int" << std::endl;
-    }
+    void operator()(int) { std::cout << "int" << std::endl; }
 
-    void operator()(double) {
-        std::cout << "double" << std::endl;
-    }
+    void operator()(double) { std::cout << "double" << std::endl; }
 };
-
 
 int main() {
 
@@ -41,19 +35,15 @@ int main() {
     variant<int, double> yeet{0.8};
     yeet = 10;
 
-    
     // .if (std::holds_alternative<int>(str)) {
     //     std::cout << "hoi" << std::endl;
     // }
-// 
-    
+    //
 
-
-    //visit(interpreter, );
+    // visit(interpreter, );
 
     return 0;
 }
-
 
 #if 0 
 
@@ -66,5 +56,5 @@ Interpreter<empty, UniquePtrIndirection, true, void> interpreter;
     Value x3 = interpreter(BoolExpr<>{{}, true});
 
     Value x4 = interpreter(GroupingExpr<>{{}, std::move(node)});
-    
+
 #endif

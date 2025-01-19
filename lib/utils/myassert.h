@@ -10,8 +10,6 @@
 #define MY_ASSERT assert
 #endif
 
-
 #else
 #define MY_ASSERT(x)
 #endif
-
