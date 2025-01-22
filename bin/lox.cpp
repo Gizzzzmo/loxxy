@@ -53,12 +53,14 @@ auto main(int argc, const char** argv) -> int {
     std::thread parse_thread([&parser, argc, clock_id]() {
         Interpreter<empty, UniquePtrIndirection, true> interpreter{clock_id};
 
+        std::vector<StmtPointer<empty, UniquePtrIndirection, true>> stmts;
         while (true) {
             auto root = argc < 2 ? parser.parseRepl() : parser.parse();
             if (root.statements.size() == 0)
                 break;
             for (auto& stmt : root.statements) {
                 utils::visit(interpreter, stmt);
+                stmts.push_back(std::move(stmt));
             }
         }
     });

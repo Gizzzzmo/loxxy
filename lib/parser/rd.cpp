@@ -174,12 +174,33 @@ private:
             try {
                 if (match(VAR))
                     return var_declaration();
+                if (match(FUN))
+                    return fun_declaration();
 
                 return statement();
             } catch (ParseError& err) { synchronize(); }
         }
 
         return std::nullopt;
+    }
+
+    auto fun_declaration() -> StmtPointer {
+        Token identifier = expect(IDENTIFIER);
+        expect(LEFT_PAREN);
+
+        std::vector<const persistent_string<>*> args;
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (args.size() >= 255)
+                    error(stream.peek(), "Can't have more than 255 parameters.");
+
+                args.push_back(&expect(IDENTIFIER).getLexeme());
+            } while (match(COMMA));
+        }
+        expect(RIGHT_PAREN);
+        expect(LEFT_BRACE);
+
+        return make_node<FunDecl>(&identifier.getLexeme(), std::move(args), block());
     }
 
     auto var_declaration() -> StmtPointer {
@@ -203,9 +224,21 @@ private:
         if (match(PRINT))
             return print_statement();
         if (match(LEFT_BRACE))
-            return block();
+            return make_node<BlockStmt>(block());
+        if (match(RETURN))
+            return return_statement();
 
         return expression_statement();
+    }
+
+    auto return_statement() -> StmtPointer {
+        ExprPointer expr = make_node<NilExpr>();
+
+        if (!check(SEMICOLON))
+            expr = expression();
+        expect(SEMICOLON);
+
+        return make_node<ReturnStmt>(std::move(expr));
     }
 
     auto for_statement() -> StmtPointer {
@@ -290,7 +323,7 @@ private:
         return make_node<ExpressionStmt>(std::move(expr));
     }
 
-    auto block() -> StmtPointer {
+    auto block() -> std::vector<StmtPointer> {
         ScopeGuard guard{scope_level};
 
         std::vector<StmtPointer> statements{};
@@ -304,7 +337,7 @@ private:
 
         expect(RIGHT_BRACE);
 
-        return make_node<BlockStmt>(std::move(statements));
+        return statements;
     }
 
     auto expression() -> ExprPointer { return comma(); }

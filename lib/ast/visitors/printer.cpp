@@ -82,6 +82,23 @@ struct ASTPrinter : IndirectVisitor<ASTPrinter<Payload, Indirection, ptr_variant
         stream << " ) ";
     }
 
+    void operator()(const FunDecl& node) {
+        stream << "FUN_DECL " << *node.identifier << " ( ";
+
+        for (auto& argument : node.args) {
+            stream << *argument;
+            if (&argument != &node.args.back())
+                stream << ", ";
+        }
+        stream << " ) {\n";
+
+        for (const auto& stmt : node.body) {
+            visit(*this, stmt);
+            stream << "\n";
+        }
+        stream << "}";
+    }
+
     void operator()(const VarDecl& node) {
         stream << "VAR_DECL ( " << *node.identifier;
         if (node.expr) {
@@ -121,6 +138,12 @@ struct ASTPrinter : IndirectVisitor<ASTPrinter<Payload, Indirection, ptr_variant
         visit(*this, node.body);
     }
 
+    void operator()(const ReturnStmt& node) {
+        stream << "RETURN ( ";
+        visit(*this, node.expr);
+        stream << " ) ";
+    }
+
 private:
     std::ostream& stream;
 };
@@ -149,16 +172,15 @@ struct resolver_stream<void> {
 };
 
 template <typename T, typename Resolver>
-resolver_stream<Resolver> operator<<(resolver_stream<Resolver>& ostream, const T& t) {
+auto operator<<(resolver_stream<Resolver>& ostream, const T& t) -> resolver_stream<Resolver> {
     ostream.ostream << t;
     return ostream;
 }
 
 template <typename Resolver, typename Payload, typename Indirection, bool ptr_variant>
     requires(!std::same_as<Resolver, void>)
-resolver_stream<Resolver>& operator<<(
-    resolver_stream<Resolver>& ostream, const ExprPointer<Payload, Indirection, ptr_variant>& node
-) {
+auto operator<<(resolver_stream<Resolver>& ostream, const ExprPointer<Payload, Indirection, ptr_variant>& node)
+    -> resolver_stream<Resolver>& {
     visit(ASTPrinter<Payload, Indirection, ptr_variant, Resolver>(ostream.ostream, ostream.resolver), node);
     return ostream;
 }

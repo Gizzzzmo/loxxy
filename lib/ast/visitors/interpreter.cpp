@@ -5,6 +5,7 @@ module;
 #include <cstddef>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <ranges>
 #include <stdexcept>
 #include <string>
@@ -117,6 +118,7 @@ struct ValuePrinter {
     void operator()(const BuiltinCallable* x) {
         ostream << "<builtin fn: " << std::string_view(x->name) << "#" << x->arity << "@" << &x->fn << ">";
     }
+    void operator()(const LoxCallable& x) { ostream << "<function>"; }
 };
 
 auto operator<<(std::ostream& ostream, const Value& value) -> std::ostream& {
@@ -143,6 +145,62 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
 
     static constexpr BuiltinCallable clock_builtin{.fn = _clock_builtin, .name = "clock", .arity = 0};
 
+    class Call {
+        using Interpreter = Self;
+
+    public:
+        Call(const std::span<Value> args, Interpreter& interpreter) : args(args), interpreter(interpreter) {
+            interpreter.return_value = std::nullopt;
+        }
+
+        auto operator()(const BuiltinCallable* fn) -> Value {
+            if (args.size() != fn->arity) {
+                std::stringstream error_msg;
+                error_msg << "got " << args.size() << " arguments, for builtin function '" << fn->name
+                          << "' with arity " << fn->arity;
+                throw WrongNumberOfArguments(error_msg.str());
+            }
+
+            return fn->fn(args);
+        }
+
+        auto operator()(const LoxCallable& fn) -> Value {
+            auto body = reinterpret_cast<const std::vector<StmtPointer>*>(fn.function_body);
+            if (fn.arg_names.size() != args.size()) {
+                std::stringstream error_msg;
+                error_msg << "function expects " << fn.arg_names.size() << " arguments, but got " << args.size() << ".";
+                throw WrongNumberOfArguments(error_msg.str());
+            }
+
+            interpreter.variables.emplace_back();
+            for (size_t i = 0; i < args.size(); i++) {
+                interpreter.variables.back()[fn.arg_names[i]] = args[i];
+            }
+
+            interpreter.return_value = std::nullopt;
+            for (const StmtPointer& statement : *body) {
+                visit(interpreter, statement);
+                if (interpreter.return_value.has_value())
+                    break;
+            }
+            interpreter.variables.pop_back();
+
+            if (!interpreter.return_value.has_value())
+                interpreter.return_value = nullptr;
+
+            return interpreter.return_value.value();
+        }
+
+        template <typename T>
+        auto operator()(const T& value) -> Value {
+            throw NotCallable("bad callee");
+        }
+
+    private:
+        const std::span<Value> args;
+        Interpreter& interpreter;
+    };
+
     Interpreter(const persistent_string<>* clock_id) { variables.front().emplace(clock_id, &clock_builtin); }
 
     void addBuiltin(const persistent_string<>* identifier, Value&& value) {
@@ -164,6 +222,11 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
         variables.back()[node.identifier] = std::move(init);
     }
 
+    void operator()(const FunDecl& node) {
+        LoxCallable fn{node.args, &node.body};
+        variables.back()[node.identifier] = Value{fn};
+    }
+
     void operator()(const BlockStmt& node) {
         variables.emplace_back();
         for (const auto& statement : node.statements) {
@@ -183,6 +246,8 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
         while (truthy(visit(*this, node.condition)))
             visit(*this, node.body);
     }
+
+    void operator()(const ReturnStmt& node) { return_value = visit(*this, node.expr); }
 
     template <typename T>
     void operator()(const T&) {}
@@ -280,21 +345,7 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
         }
 
         Value callee = visit(*this, node.callee);
-
-        auto call = Adhoc::make_visitor(
-            [&args](const BuiltinCallable* fn) -> Value {
-                if (args.size() != fn->arity) {
-                    std::stringstream error_msg;
-                    error_msg << "got " << args.size() << " arguments, for builtin function '" << fn->name
-                              << "' with arity " << fn->arity;
-                    throw WrongNumberOfArguments(error_msg.str());
-                }
-
-                return fn->fn(args);
-            },
-            [](const LoxCallable& fn) -> Value { return Value{0.0}; },
-            []<typename T>(const T& value) -> Value { throw NotCallable("bad callee"); }
-        );
+        Call call{args, *this};
 
         return visit(call, callee);
     }
@@ -313,6 +364,7 @@ private:
     }
 
     std::vector<std::map<const persistent_string<>*, Value>> variables{1};
+    std::optional<Value> return_value{};
 };
 
 } // namespace loxxy

@@ -54,7 +54,7 @@ struct OffsetBuilder {
 private:
     multi_vector<
         BinaryExpr, UnaryExpr, GroupingExpr, StringExpr, NumberExpr, BoolExpr, NilExpr, VarExpr, AssignExpr, CallExpr,
-        PrintStmt, ExpressionStmt, VarDecl, BlockStmt, IfStmt, WhileStmt>
+        PrintStmt, ExpressionStmt, VarDecl, FunDecl, BlockStmt, IfStmt, WhileStmt, ReturnStmt>
         nodes;
 
     Builder payload_builder;

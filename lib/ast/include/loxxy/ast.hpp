@@ -14,7 +14,9 @@
     using PrintStmt = PrintStmt<Payload, Indirection, ptr_variant>;                                                    \
     using ExpressionStmt = ExpressionStmt<Payload, Indirection, ptr_variant>;                                          \
     using VarDecl = VarDecl<Payload, Indirection, ptr_variant>;                                                        \
+    using FunDecl = FunDecl<Payload, Indirection, ptr_variant>;                                                        \
     using BlockStmt = BlockStmt<Payload, Indirection, ptr_variant>;                                                    \
     using IfStmt = IfStmt<Payload, Indirection, ptr_variant>;                                                          \
     using WhileStmt = WhileStmt<Payload, Indirection, ptr_variant>;                                                    \
+    using ReturnStmt = ReturnStmt<Payload, Indirection, ptr_variant>;                                                  \
     using TURoot = TURoot<Payload, Indirection, ptr_variant>

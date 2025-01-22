@@ -1,4 +1,25 @@
-print "blub";
-print 0x12;
-print 12;
 
+fun fib(x) {
+    if (x < 2)
+        return 1;
+
+    return fib(x - 2) + fib(x - 1);
+}
+
+print "hi";
+
+var t0 = clock();
+print fib(4);
+print clock() - t0;
+
+t0 = clock();
+print fib(10);
+print clock() - t0;
+
+t0 = clock();
+print fib(20);
+print clock() - t0;
+
+t0 = clock();
+print fib(30);
+print clock() - t0;

@@ -1,4 +1,5 @@
 module;
+#include <iostream>
 #ifdef STD_VARIANT
 #define SOURCE std
 #include <variant>

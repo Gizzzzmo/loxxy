@@ -21,7 +21,7 @@ struct BuiltinCallable {
 
 struct LoxCallable {
     std::vector<const utils::persistent_string<>*> arg_names;
-    void* function_body;
+    const void* function_body;
 };
 
 } // namespace loxxy
