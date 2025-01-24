@@ -242,7 +242,7 @@ private:
     }
 
     auto for_statement() -> StmtPointer {
-        ScopeGuard guard(scope_level);
+        ScopeGuard guard{scope_level};
         expect(LEFT_PAREN);
 
         std::vector<StmtPointer> for_loop_block;
@@ -279,7 +279,7 @@ private:
     }
 
     auto while_statement() -> StmtPointer {
-        ScopeGuard guard(scope_level);
+        ScopeGuard guard{scope_level};
         expect(LEFT_PAREN);
         ExprPointer condition = expression();
         expect(RIGHT_PAREN);
@@ -290,7 +290,7 @@ private:
 
     auto if_statement() -> StmtPointer {
         ExprPointer condition = [this]() -> ExprPointer {
-            ScopeGuard guard(scope_level);
+            ScopeGuard guard{scope_level};
             expect(LEFT_PAREN);
             ExprPointer condition = expression();
             expect(RIGHT_PAREN);
@@ -465,7 +465,7 @@ private:
             }
 
             if (match(LEFT_PAREN)) {
-                ScopeGuard guard(scope_level);
+                ScopeGuard guard{scope_level};
                 node = finishCall(std::move(node));
             } else
                 break;
