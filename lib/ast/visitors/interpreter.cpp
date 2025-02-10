@@ -23,12 +23,10 @@ import utils.variant;
 using std::nullptr_t;
 using std::same_as;
 using std::string;
+using utils::any_ref;
 using utils::IndirectVisitor;
 
 export namespace loxxy {
-
-template <typename T, typename... U>
-concept any_ref = (same_as<std::remove_cvref_t<T>, std::remove_cvref_t<U>> || ...) && std::is_reference_v<T>;
 
 struct TypeError : std::runtime_error {
     using std::runtime_error::runtime_error;
@@ -85,7 +83,7 @@ struct Not {
     auto operator()(auto&&) -> bool { return false; }
 };
 
-auto truthy(const Value& v) -> bool { return !visit(Not{}, v); }
+auto truthy(const Value& v) -> bool { return !utils::visit(Not{}, v); }
 
 struct Plus {
     auto operator()(double x, double y) -> Value { return Value{x + y}; }
@@ -122,7 +120,7 @@ struct ValuePrinter {
 };
 
 auto operator<<(std::ostream& ostream, const Value& value) -> std::ostream& {
-    visit(ValuePrinter{ostream}, value);
+    utils::visit(ValuePrinter{ostream}, value);
     return ostream;
 }
 
@@ -135,7 +133,7 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
     using Parent::operator();
     using Parent::Parent;
 
-    using Adhoc = utils::Adhoc<Indirection>;
+    using Adhoc = utils::Adhoc<Resolver, Indirection>;
 
     static auto _clock_builtin(std::span<loxxy::Value> vs) -> Value {
         const static auto t0 = std::chrono::high_resolution_clock::now();
@@ -179,7 +177,7 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
 
             interpreter.return_value = std::nullopt;
             for (const StmtPointer& statement : *body) {
-                visit(interpreter, statement);
+                utils::visit(interpreter, statement);
                 if (interpreter.return_value.has_value())
                     break;
             }
@@ -201,23 +199,26 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
         Interpreter& interpreter;
     };
 
-    Interpreter(const persistent_string<>* clock_id) { variables.front().emplace(clock_id, &clock_builtin); }
+    template <typename... Args>
+    Interpreter(const persistent_string<>* clock_id, Args&&... args) : adhoc(std::forward<Args>(args)...) {
+        variables.front().emplace(clock_id, &clock_builtin);
+    }
 
     void addBuiltin(const persistent_string<>* identifier, Value&& value) {
         variables.front().emplace(identifier, std::move(value));
     }
 
     void operator()(const ExpressionStmt& node) {
-        visit(*this, node.expr);
+        utils::visit(*this, node.expr);
         return;
     }
 
-    void operator()(const PrintStmt& node) { std::cout << visit(*this, node.expr) << std::endl; }
+    void operator()(const PrintStmt& node) { std::cout << utils::visit(*this, node.expr) << std::endl; }
 
     void operator()(const VarDecl& node) {
         Value init = nullptr;
         if (node.expr.has_value())
-            init = visit(*this, node.expr.value());
+            init = utils::visit(*this, node.expr.value());
 
         variables.back()[node.identifier] = std::move(init);
     }
@@ -230,58 +231,58 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
     void operator()(const BlockStmt& node) {
         variables.emplace_back();
         for (const auto& statement : node.statements) {
-            visit(*this, statement);
+            utils::visit(*this, statement);
         }
         variables.pop_back();
     }
 
     void operator()(const IfStmt& node) {
-        if (truthy(visit(*this, node.condition)))
-            visit(*this, node.then_branch);
+        if (truthy(utils::visit(*this, node.condition)))
+            utils::visit(*this, node.then_branch);
         else if (node.else_branch.has_value())
-            visit(*this, node.else_branch.value());
+            utils::visit(*this, node.else_branch.value());
     }
 
     void operator()(const WhileStmt& node) {
-        while (truthy(visit(*this, node.condition)))
-            visit(*this, node.body);
+        while (truthy(utils::visit(*this, node.condition)))
+            utils::visit(*this, node.body);
     }
 
-    void operator()(const ReturnStmt& node) { return_value = visit(*this, node.expr); }
+    void operator()(const ReturnStmt& node) { return_value = utils::visit(*this, node.expr); }
 
     template <typename T>
     void operator()(const T&) {}
 
     auto operator()(const BinaryExpr& node) -> Value {
-        auto lhs = visit(*this, node.lhs);
-        if (node.op.getType() == AND && visit(Not{}, lhs))
+        auto lhs = utils::visit(*this, node.lhs);
+        if (node.op.getType() == AND && utils::visit(Not{}, lhs))
             return Value{false};
 
         if (node.op.getType() == OR && truthy(lhs))
             return Value{true};
 
-        auto rhs = visit(*this, node.rhs);
+        auto rhs = utils::visit(*this, node.rhs);
         switch (node.op.getType()) {
         case GREATER:
-            return Value{visit(Greater{}, lhs, rhs)};
+            return Value{utils::visit(Greater{}, lhs, rhs)};
         case GREATER_EQUAL:
-            return Value{visit(GreaterEq{}, lhs, rhs)};
+            return Value{utils::visit(GreaterEq{}, lhs, rhs)};
         case LESS:
-            return Value{visit(Less{}, lhs, rhs)};
+            return Value{utils::visit(Less{}, lhs, rhs)};
         case LESS_EQUAL:
-            return Value{visit(LessEq{}, lhs, rhs)};
+            return Value{utils::visit(LessEq{}, lhs, rhs)};
         case EQUAL_EQUAL:
-            return Value{visit(Equals{}, lhs, rhs)};
+            return Value{utils::visit(Equals{}, lhs, rhs)};
         case BANG_EQUAL:
-            return Value{!visit(Equals{}, lhs, rhs)};
+            return Value{!utils::visit(Equals{}, lhs, rhs)};
         case PLUS:
-            return visit(Plus{}, lhs, rhs);
+            return utils::visit(Plus{}, lhs, rhs);
         case MINUS:
-            return Value{visit(Minus{}, lhs, rhs)};
+            return Value{utils::visit(Minus{}, lhs, rhs)};
         case STAR:
-            return Value{visit(Times{}, lhs, rhs)};
+            return Value{utils::visit(Times{}, lhs, rhs)};
         case SLASH:
-            return Value{visit(Divide{}, lhs, rhs)};
+            return Value{utils::visit(Divide{}, lhs, rhs)};
         case AND:
         case OR:
             return Value{truthy(rhs)};
@@ -290,15 +291,15 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
         }
     }
 
-    auto operator()(const GroupingExpr& node) -> Value { return visit(*this, node.expr); }
+    auto operator()(const GroupingExpr& node) -> Value { return utils::visit(*this, node.expr); }
 
     auto operator()(const UnaryExpr& node) -> Value {
-        Value rhs = visit(*this, node.expr);
+        Value rhs = utils::visit(*this, node.expr);
         switch (node.op.getType()) {
         case MINUS:
-            return Value{visit(Minus{}, rhs)};
+            return Value{utils::visit(Minus{}, rhs)};
         case BANG:
-            return Value{visit(Not{}, rhs)};
+            return Value{utils::visit(Not{}, rhs)};
         default:
             throw std::runtime_error("malformed unary node");
         }
@@ -333,7 +334,7 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
             throw UndefinedVariable(error);
         }
 
-        *loc = visit(*this, node.expr);
+        *loc = utils::visit(*this, node.expr);
         return *loc;
     }
 
@@ -341,13 +342,13 @@ struct Interpreter : IndirectVisitor<Interpreter<Payload, Indirection, ptr_varia
         std::vector<Value> args;
         args.reserve(node.arguments.size());
         for (const ExprPointer& arg : node.arguments) {
-            args.push_back(visit(*this, arg));
+            args.push_back(utils::visit(*this, arg));
         }
 
-        Value callee = visit(*this, node.callee);
+        Value callee = utils::visit(*this, node.callee);
         Call call{args, *this};
 
-        return visit(call, callee);
+        return utils::visit(call, callee);
     }
 
 private:
@@ -365,6 +366,7 @@ private:
 
     std::vector<std::map<const persistent_string<>*, Value>> variables{1};
     std::optional<Value> return_value{};
+    Adhoc adhoc;
 };
 
 } // namespace loxxy

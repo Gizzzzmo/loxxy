@@ -47,10 +47,60 @@ template <typename Payload, typename Indirection, bool ptr_variant>
 struct InnerSTNImpl<ExpressionStmt<Payload, Indirection, ptr_variant>> : true_type {};
 
 template <typename T>
+struct StatementSTNImpl : false_type {};
+
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<PrintStmt<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<ExpressionStmt<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<VarDecl<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<FunDecl<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<BlockStmt<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<IfStmt<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<WhileStmt<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct StatementSTNImpl<ReturnStmt<Payload, Indirection, ptr_variant>> : true_type {};
+
+template <typename T>
+struct ExpressionSTNImpl : false_type {};
+
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<BinaryExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<UnaryExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<GroupingExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<StringExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<NumberExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<BoolExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<NilExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<VarExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<AssignExpr<Payload, Indirection, ptr_variant>> : true_type {};
+template <typename Payload, typename Indirection, bool ptr_variant>
+struct ExpressionSTNImpl<CallExpr<Payload, Indirection, ptr_variant>> : true_type {};
+
+template <typename T>
 concept InnerSTN = InnerSTNImpl<T>::value;
 
 template <typename T>
 concept ConcreteSTN = InnerSTN<T> || LiteralSTN<T>;
+
+template <typename T>
+concept ExpressionSTN = ExpressionSTNImpl<T>::value;
+
+template <typename T>
+concept StatementSTN = StatementSTNImpl<T>::value;
 
 template <typename Payload, typename Indirection, bool ptr_variant, typename... Args>
 struct ResolveNodeTypeImpl;

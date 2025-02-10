@@ -19,6 +19,7 @@ import ast;
 import ast.boxed_node_builder;
 import ast.rc_node_builder;
 import ast.offset_builder;
+import ast.offset_dedupl_builder;
 import ast.hash_payload_builder;
 
 using namespace loxxy;
@@ -118,15 +119,24 @@ auto main(int argc, const char** argv) -> int {
     //     generic_stream<std::vector, Token>,
     //     RCNodeBuilder<NodeHash, true, HashPayloadBuilder<SharedPtrIndirection, true>>
     //>
-    using BoxParse = Parser<generic_stream<std::vector, Token>, BoxedNodeBuilder<>>;
+    using BoxParse = BoxedNodeBuilder<>;
+    using BoxParseSimple = BoxedNodeBuilder<empty, false>;
 
-    using OffsetParse = Parser<generic_stream<std::vector, Token>, OffsetBuilder<uint32_t>>;
+    using OffsetParse = OffsetBuilder<uint32_t>;
+    using OffsetParseSimple = OffsetBuilder<uint32_t, empty, false>;
+
+    using OffsetParseLarge = OffsetBuilder<uint64_t>;
+    using OffsetParseSimpleLarge = OffsetBuilder<uint64_t, empty, false>;
+
     std::cout << "Parsers:\n";
-    for_types<BoxParse, OffsetParse>([&token_stream]<typename T>() {
+    for_types<
+        BoxParse, OffsetParse, BoxParseSimple, OffsetParseSimple, OffsetParseLarge, OffsetParseSimpleLarge,
+        OffsetDeduplBuilder<uint32_t>>([&token_stream]<typename T>() {
+        print_family<T>();
         std::cout << demangle(typeid(T).name()) << "\n";
         std::vector<double> times;
         for (int i = 0; i < 5; i++) {
-            T parser(token_stream);
+            Parser<generic_stream<std::vector, Token>, T> parser(token_stream);
             auto t1 = high_resolution_clock::now();
             parser.parse();
             auto t2 = high_resolution_clock::now();

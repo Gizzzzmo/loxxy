@@ -1,4 +1,6 @@
 #define USING_FAMILY(Payload, Indirection, ptr_variant)                                                                \
+    using Expression = Expression<Payload, Indirection, ptr_variant>;                                                  \
+    using Statement = Statement<Payload, Indirection, ptr_variant>;                                                    \
     using ExprPointer = ExprPointer<Payload, Indirection, ptr_variant>;                                                \
     using StmtPointer = StmtPointer<Payload, Indirection, ptr_variant>;                                                \
     using BinaryExpr = BinaryExpr<Payload, Indirection, ptr_variant>;                                                  \

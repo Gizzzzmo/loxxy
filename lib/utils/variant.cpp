@@ -33,6 +33,7 @@ using std::same_as;
 #endif
 
 struct VarWrapperMarker {};
+struct IndirectVarWrapperMarker {};
 
 export namespace utils {
 
@@ -55,9 +56,40 @@ struct IsVarImpl<variant<Ts...>> : std::true_type {};
 template <typename T>
 concept IsVar = IsVarImpl<std::remove_cvref_t<T>>::value;
 
-template <typename Var>
-    requires(!std::is_const_v<Var> && !std::is_volatile_v<Var> && !std::is_reference_v<Var> && IsVar<Var>)
-struct WrappedVar : VarWrapperMarker {
+template <typename Var, typename Indirection = void>
+struct WrappedVar;
+
+template <IsVar Var, typename Indirection>
+    requires(!std::is_const_v<Var> && !std::is_volatile_v<Var> && !std::is_reference_v<Var>)
+struct WrappedVar<Var, Indirection> : IndirectVarWrapperMarker {
+    static constexpr size_t variant_size = SOURCE::variant_size_v<Var>;
+    template <size_t i>
+    using variant_alternative = SOURCE::variant_alternative_t<i, Var>;
+
+    template <typename... Args>
+    constexpr WrappedVar(Args&&... args) : wrapped(std::forward<Args>(args)...) {}
+
+    template <typename Self, typename T>
+    constexpr auto operator=(this Self&& self, T&& t) -> auto&& {
+        Indirection::template get<Var>(std::forward(self.wrapped)) = std::forward<T>(t);
+        return std::forward<Self>(self);
+    }
+
+    constexpr ALWAYS_INLINE auto&& get_visitable(this auto&& self) {
+        return Indirection::template get<Var>(self.wrapped);
+    }
+
+    template <typename Self, typename Res>
+    constexpr ALWAYS_INLINE auto&& get_visitable(this Self&& self, Res&& res) {
+        return Indirection::template get<Var>(self.wrapped, std::forward<Res>(res));
+    }
+
+private:
+    typename Indirection::template type<Var> wrapped;
+};
+template <IsVar Var>
+    requires(!std::is_const_v<Var> && !std::is_volatile_v<Var> && !std::is_reference_v<Var>)
+struct WrappedVar<Var, void> : VarWrapperMarker {
     static constexpr size_t variant_size = SOURCE::variant_size_v<Var>;
     template <size_t i>
     using variant_alternative = SOURCE::variant_alternative_t<i, Var>;
@@ -67,39 +99,46 @@ struct WrappedVar : VarWrapperMarker {
 
     template <typename Self, typename... Args>
     constexpr Self operator=(this Self&& self, Args&&... args) {
-        self.wrapper.operator=(std::forward<Args>(args)...);
+        self.wrapped.operator=(std::forward<Args>(args)...);
         return std::forward<Self>(self);
     }
 
-    template <typename Self>
-    constexpr ALWAYS_INLINE auto&& get_visitable(this Self&& self) {
-        return self.wrapped;
-    }
+    constexpr ALWAYS_INLINE auto&& get_visitable(this auto&& self) { return self.wrapped; }
 
 private:
     Var wrapped;
 };
 
 template <typename T>
+concept ResolvingVisitor = requires(T t) {
+    { t.resolver };
+};
+
+template <typename T>
 concept IsWrappedVar = std::derived_from<std::remove_cvref_t<T>, VarWrapperMarker>;
+template <typename T>
+concept IsIndirectWrappedVar = std::derived_from<std::remove_cvref_t<T>, IndirectVarWrapperMarker>;
 
 constexpr ALWAYS_INLINE decltype(auto) extract_visitable(auto&&, IsVar auto&& var) { return var; }
 
-template <IsWrappedVar Arg>
-constexpr ALWAYS_INLINE decltype(auto) extract_visitable(auto&&, Arg&& wrapped_var) {
+template <typename Visitor, IsWrappedVar Arg>
+constexpr ALWAYS_INLINE decltype(auto) extract_visitable(Visitor&&, Arg&& wrapped_var) {
     return std::forward<Arg>(wrapped_var).get_visitable();
 }
 
-template <typename Visitor, IsWrappedVar Arg>
-    requires(requires(Visitor v) {
-        { v.resolver };
-    })
+template <typename Visitor, IsIndirectWrappedVar Arg>
+    requires(!ResolvingVisitor<Visitor>)
+constexpr ALWAYS_INLINE decltype(auto) extract_visitable(Visitor&&, Arg&& wrapped_var) {
+    return std::forward<Arg>(wrapped_var).get_visitable();
+}
+
+template <typename Visitor, IsIndirectWrappedVar Arg>
+    requires(ResolvingVisitor<Visitor>)
 constexpr ALWAYS_INLINE decltype(auto) extract_visitable(Visitor&& visitor, Arg&& wrapped_var) {
     return std::forward<Arg>(wrapped_var).get_visitable(visitor.resolver);
 }
 
 template <typename Visitor, typename... Args>
-    requires(((IsVar<Args> || IsWrappedVar<Args>) && ...))
 constexpr ALWAYS_INLINE decltype(auto) visit(Visitor&& visitor, Args&&... args) {
     return SOURCE::visit(
         std::forward<Visitor>(visitor), extract_visitable(std::forward<Visitor>(visitor), std::forward<Args>(args))...
@@ -219,34 +258,6 @@ struct IndirectVisitorImpl {
         return (*static_cast<Visitor*>(this))(unmapped);
     }
 
-    template <typename... Ts>
-        requires(IsIndirection<Indirection, Resolver, variant<Ts...>>)
-    decltype(auto) visit(Mapped<variant<Ts...>>& mapped) {
-        // decltype(auto) unmapped = unmap<variant<Ts...>>(mapped);
-        return visit(*reinterpret_cast<Visitor*>(this), mapped);
-    }
-
-    template <typename... Ts>
-        requires(IsIndirection<Indirection, Resolver, const variant<Ts...>>)
-    decltype(auto) visit(Mapped<const variant<Ts...>>& mapped) {
-        // decltype(auto) unmapped = unmap<const variant<Ts...>>(mapped);
-        return visit(*reinterpret_cast<Visitor*>(this), mapped);
-    }
-
-    template <typename... Ts>
-        requires(IsIndirection<Indirection, Resolver, volatile variant<Ts...>>)
-    decltype(auto) visit(Mapped<volatile variant<Ts...>>& mapped) {
-        // decltype(auto) unmapped = unmap<volatile variant<Ts...>>(mapped);
-        return visit(*reinterpret_cast<Visitor*>(this), mapped);
-    }
-
-    template <typename... Ts>
-        requires(IsIndirection<Indirection, Resolver, const volatile variant<Ts...>>)
-    decltype(auto) visit(Mapped<const volatile variant<Ts...>>& mapped) {
-        // decltype(auto) unmapped = unmap<const volatile variant<Ts...>>(mapped);
-        return visit(*reinterpret_cast<Visitor*>(this), mapped);
-    }
-
 private:
     template <typename T>
         requires(same_as<Resolver, void>)
@@ -307,24 +318,33 @@ struct IndirectVisitor : ResolverHolder<Resolver>, IndirectVisitorImpl<Visitor, 
     using IndirectVisitorImpl<Visitor, Resolver, Indirections>::operator()...;
 };
 
-template <typename... Indirections>
-struct Adhoc {
-    template <typename Resolver, typename... Fns>
-    struct Visitor : Fns..., IndirectVisitor<Visitor<Resolver, Fns...>, Resolver, Indirections...> {
-        using Parent = IndirectVisitor<Visitor<Resolver, Fns...>, Resolver, Indirections...>;
+template <typename Resolver, typename... Indirections>
+struct Adhoc : ResolverHolder<Resolver> {
+    template <typename... Args>
+    Adhoc(Args&&... args) : ResolverHolder<Resolver>(std::forward<Args>(args)...) {}
+    template <typename... Fns>
+    struct Vis : Fns..., IndirectVisitor<Vis<Fns...>, Resolver, Indirections...> {
+        using Parent = IndirectVisitor<Vis<Fns...>, Resolver, Indirections...>;
         using Fns::operator()...;
         using Parent::operator();
 
         // Visitor(Resolver resolver) requires(!same_as<Resolver, void>) :
         // Parent(std::forward<Resolver>(resolver)) {}
+        template <any_ref<Resolver> Res, typename... Args>
+            requires(!std::same_as<Resolver, void>)
+        Vis(Res&& resolver, Args&&... args) : Fns(std::forward<Args>(args))..., Parent(std::forward<Res>(resolver)) {}
+
         template <typename... Args>
-            requires(same_as<Resolver, void>)
-        Visitor(Args&&... args) : Fns(std::forward<Args>(args))... {}
+            requires(std::same_as<Resolver, void>)
+        Vis(Args&&... args) : Fns(std::forward<Args>(args))... {}
     };
 
     template <typename... Fns>
-    static auto make_visitor(Fns&&... fns) {
-        return Visitor<void, Fns...>{std::forward<Fns>(fns)...};
+    auto make_visitor(Fns&&... fns) {
+        if constexpr (std::same_as<Resolver, void>)
+            return Vis<Fns...>{std::forward<Fns>(fns)...};
+        else
+            return Vis<Fns...>{this->resolver, std::forward<Fns>(fns)...};
     }
 };
 

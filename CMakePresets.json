@@ -18,8 +18,8 @@
             "name": "gnu-cli-develop",
             "hidden": true,
             "cacheVariables": {
-                "CMAKE_C_FLAGS": "-fdiagnostics-color=always",
-                "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
+                "CMAKE_C_FLAGS": "-fdiagnostics-color=always -fno-builtin-memset -fno-builtin-memcpy",
+                "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always -ftemplate-backtrace-limit=0 -fno-builtin-memset -fno-builtin-memcpy",
                 "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g -Wall -Wpedantic -fsanitize=undefined,address",
                 "CMAKE_C_FLAGS_DEBUG": "-O0 -g -Wall -Wpedantic -fsanitize=undefined,address",
                 "CMAKE_CXX_FLAGS_RELEASE": "-O3 -Wall -flto",

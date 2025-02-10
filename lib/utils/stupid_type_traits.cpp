@@ -11,6 +11,8 @@ using std::function;
 using std::same_as;
 
 export namespace utils {
+template <typename T, typename... U>
+concept any_ref = (same_as<std::remove_cvref_t<T>, std::remove_cvref_t<U>> || ...); //&& std::is_reference_v<T>;
 
 template <typename T, typename I, typename E>
 concept SubscriptableWith = requires(const T ct, std::remove_const_t<T> t, I i) {

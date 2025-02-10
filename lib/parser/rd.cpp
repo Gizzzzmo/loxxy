@@ -50,11 +50,16 @@ class Parser {
     static constexpr bool ptr_variant = Builder::ptr_variant;
     USING_FAMILY(Payload, Indirection, ptr_variant);
 
-    using Adhoc = Adhoc<Indirection>;
+    using Resolver = std::add_lvalue_reference_t<typename Builder::Resolver>;
 
 public:
     template <typename... Args>
+        requires(std::same_as<Resolver, void>)
     Parser(istream& stream, Args&&... args) : stream(stream), node_builder(std::forward<Args>(args)...) {}
+    template <typename... Args>
+        requires(!std::same_as<Resolver, void>)
+    Parser(istream& stream, Args&&... args)
+        : stream(stream), node_builder(std::forward<Args>(args)...), adhoc(node_builder.get_resolver()) {}
 
     auto parseRepl() -> TURoot {
         scope_level = 0;
@@ -361,7 +366,7 @@ private:
         if ((op = match(EQUAL))) {
             ExprPointer value = disjunction();
 
-            auto getAssignTarget = Adhoc::make_visitor(
+            auto getAssignTarget = adhoc.make_visitor(
                 [](const VarExpr& node) { return node.identifier; },
                 []<typename T>(const T& node) -> const persistent_string<>* { return nullptr; }
             );
@@ -540,6 +545,7 @@ private:
 
     istream& stream;
     Builder node_builder;
+    Adhoc<Resolver, Indirection> adhoc;
     optional<Token> eof = std::nullopt;
     bool panic = false;
     int scope_level;

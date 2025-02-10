@@ -51,7 +51,7 @@ auto main(int argc, const char** argv) -> int {
 
     Loxxer lexer(std::move(file), token_stream);
 
-    Parser parser(token_stream, BoxedNodeBuilder<>{});
+    Parser parser(token_stream, BoxedNodeBuilder<empty, true>{});
 
     std::thread lex_thread([&lexer, &token_stream]() {
         lexer.scanTokensLine();

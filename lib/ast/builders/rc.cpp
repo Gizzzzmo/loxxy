@@ -1,4 +1,5 @@
 module;
+#include "loxxy/ast.hpp"
 #include <memory>
 #include <utility>
 export module ast.rc_node_builder;
@@ -17,6 +18,9 @@ struct RCNodeBuilder {
     using Payload = _Payload;
     using Indirection = SharedPtrIndirection;
     static constexpr bool ptr_variant = _ptr_variant;
+    using Resolver = void;
+
+    USING_FAMILY(Payload, Indirection, ptr_variant);
     Builder payload_builder;
 
     template <typename... Args>

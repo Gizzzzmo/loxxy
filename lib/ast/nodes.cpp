@@ -3,6 +3,7 @@ module;
 #include "loxxy/ast.hpp"
 #include <concepts>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -88,7 +89,16 @@ template <typename Payload = empty, typename Indirection = UniquePtrIndirection,
 class ExprPointer : public utils::WrappedVar<MapTypes<Expression<Payload, Indirection, ptr_variant>, Indirection>> {
     using Self = ExprPointer<Payload, Indirection, ptr_variant>;
     using Var = MapTypes<Expression<Payload, Indirection, ptr_variant>, Indirection>;
-    using utils::WrappedVar<Var>::WrappedVar;
+    using Parent = utils::WrappedVar<Var>;
+    using Parent::Parent;
+};
+
+template <typename Payload, typename Indirection>
+class ExprPointer<Payload, Indirection, false>
+    : public utils::WrappedVar<Expression<Payload, Indirection, false>, Indirection> {
+    using Self = ExprPointer<Payload, Indirection, false>;
+    using Parent = utils::WrappedVar<Expression<Payload, Indirection, false>, Indirection>;
+    using Parent::Parent;
 };
 
 template <typename Payload = empty, bool ptr_variant = true>
@@ -100,7 +110,16 @@ template <typename Payload = empty, typename Indirection = UniquePtrIndirection,
 class StmtPointer : public utils::WrappedVar<MapTypes<Statement<Payload, Indirection, ptr_variant>, Indirection>> {
     using Self = StmtPointer<Payload, Indirection, ptr_variant>;
     using Var = MapTypes<Statement<Payload, Indirection, ptr_variant>, Indirection>;
-    using utils::WrappedVar<Var>::WrappedVar;
+    using Parent = utils::WrappedVar<Var>;
+    using Parent::Parent;
+};
+
+template <typename Payload, typename Indirection>
+class StmtPointer<Payload, Indirection, false>
+    : public utils::WrappedVar<Statement<Payload, Indirection, false>, Indirection> {
+    using Self = StmtPointer<Payload, Indirection, false>;
+    using Parent = utils::WrappedVar<Statement<Payload, Indirection, false>, Indirection>;
+    using Parent::Parent;
 };
 
 template <typename Payload = empty, bool ptr_variant = true>
@@ -219,5 +238,32 @@ template <typename Payload, typename Indirection, bool ptr_variant>
 struct Family {
     USING_FAMILY(Payload, Indirection, ptr_variant);
 };
+
+template <typename Family>
+void print_family() {
+    std::cout << "Expression:       " << sizeof(typename Family::Expression) << std::endl;
+    std::cout << "Statement:        " << sizeof(typename Family::Statement) << std::endl;
+    std::cout << "ExprPointer:      " << sizeof(typename Family::ExprPointer) << std::endl;
+    std::cout << "StmtPointer:      " << sizeof(typename Family::StmtPointer) << std::endl;
+    std::cout << "  BinaryExpr:     " << sizeof(typename Family::BinaryExpr) << std::endl;
+    std::cout << "  UnaryExpr:      " << sizeof(typename Family::UnaryExpr) << std::endl;
+    std::cout << "  GroupingExpr:   " << sizeof(typename Family::GroupingExpr) << std::endl;
+    std::cout << "  StringExpr:     " << sizeof(typename Family::StringExpr) << std::endl;
+    std::cout << "  NumberExpr:     " << sizeof(typename Family::NumberExpr) << std::endl;
+    std::cout << "  BoolExpr:       " << sizeof(typename Family::BoolExpr) << std::endl;
+    std::cout << "  NilExpr:        " << sizeof(typename Family::NilExpr) << std::endl;
+    std::cout << "  VarExpr:        " << sizeof(typename Family::VarExpr) << std::endl;
+    std::cout << "  AssignExpr:     " << sizeof(typename Family::AssignExpr) << std::endl;
+    std::cout << "  CallExpr:       " << sizeof(typename Family::CallExpr) << std::endl;
+
+    std::cout << "  PrintStmt:      " << sizeof(typename Family::PrintStmt) << std::endl;
+    std::cout << "  ExpressionStmt: " << sizeof(typename Family::ExpressionStmt) << std::endl;
+    std::cout << "  VarDecl:        " << sizeof(typename Family::VarDecl) << std::endl;
+    std::cout << "  FunDecl:        " << sizeof(typename Family::FunDecl) << std::endl;
+    std::cout << "  BlockStmt:      " << sizeof(typename Family::BlockStmt) << std::endl;
+    std::cout << "  IfStmt:         " << sizeof(typename Family::IfStmt) << std::endl;
+    std::cout << "  WhileStmt:      " << sizeof(typename Family::WhileStmt) << std::endl;
+    std::cout << "  ReturnStmt:     " << sizeof(typename Family::ReturnStmt) << std::endl;
+}
 
 } // namespace loxxy

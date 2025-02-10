@@ -20,7 +20,7 @@ struct Extractor
     using Parent::Parent;
 
     template <template <typename, typename, bool> class NodeTempl>
-        requires(ConcreteSTN<NodeTempl<Payload, Indirection, ptr_variant>>)
+        requires(ExpressionSTN<NodeTempl<Payload, Indirection, ptr_variant>> || StatementSTN<NodeTempl<Payload, Indirection, ptr_variant>>)
     Payload& operator()(NodeTempl<Payload, Indirection, ptr_variant>& node) {
         return node.payload;
     }
