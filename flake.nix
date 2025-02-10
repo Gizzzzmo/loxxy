@@ -37,7 +37,7 @@
       # config.allowUnfree = true;
     };
   in {
-    devShells.default = pkgs.mkShell.override { stdenv = pkgs.llvmPackages_18.stdenv; } rec {
+    devShells.clang-18 = pkgs.mkShell.override { stdenv = pkgs.llvmPackages_18.stdenv; } rec {
       # Update the name to something that suites your project.
       name = "loxxy-clang-18";
 
@@ -65,7 +65,7 @@
         export PS1="$(echo -e '\u${icon}') {\[$(tput sgr0)\]\[\033[38;5;228m\]\w\[$(tput sgr0)\]\[\033[38;5;15m\]} (${name}) \\$ \[$(tput sgr0)\]"
       '';
     };
-    devShells.clang-19 = pkgs.mkShell.override { stdenv = pkgs.llvmPackages_19.stdenv; } rec {
+    devShells.default = pkgs.mkShell.override { stdenv = pkgs.llvmPackages_19.stdenv; } rec {
       # Update the name to something that suites your project.
       name = "loxxy-clang-19";
 
