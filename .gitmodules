@@ -7,3 +7,6 @@
 [submodule "variant"]
 	path = variant
 	url = git@github.com:mpark/variant.git
+[submodule "perf-cpp"]
+	path = perf-cpp
+	url = git@github.com:jmuehlig/perf-cpp.git

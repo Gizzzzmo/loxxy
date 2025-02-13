@@ -21,4 +21,5 @@ target_link_libraries(
           ast_offset_dedupl_builder
           ast_hash_payload_builder
           ast_interpreter
-          generic_stream)
+          generic_stream
+          perfcpp)

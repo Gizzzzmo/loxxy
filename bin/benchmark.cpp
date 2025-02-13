@@ -6,6 +6,7 @@
 #include <ios>
 #include <iostream>
 #include <numeric>
+#include <perfcpp/event_counter.h>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -132,17 +133,28 @@ auto main(int argc, const char** argv) -> int {
     for_types<
         BoxParse, OffsetParse, BoxParseSimple, OffsetParseSimple, OffsetParseLarge, OffsetParseSimpleLarge,
         OffsetDeduplBuilder<uint32_t>>([&token_stream]<typename T>() {
-        print_family<T>();
+        // print_family<T>();
         std::cout << demangle(typeid(T).name()) << "\n";
         std::vector<double> times;
         for (int i = 0; i < 5; i++) {
             Parser<generic_stream<std::vector, Token>, T> parser(token_stream);
+
+            auto counters = perf::CounterDefinition{};
+            auto event_counter = perf::EventCounter{counters};
+            event_counter.add({"seconds", "instructions", "cycles", "cache-misses"});
+
             auto t1 = high_resolution_clock::now();
+            event_counter.start();
             parser.parse();
+            event_counter.stop();
             auto t2 = high_resolution_clock::now();
             duration<double, std::milli> ms_double = t2 - t1;
             times.push_back(ms_double.count());
             token_stream.reset();
+            const auto result = event_counter.result();
+            for (const auto [event_name, value] : result) {
+                std::cout << "  " << event_name << ": " << value << std::endl;
+            }
         }
         double mean =
             std::accumulate(times.begin(), times.end(), 0.0, std::plus<>()) / static_cast<double>(times.size());
