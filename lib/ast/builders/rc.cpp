@@ -26,13 +26,13 @@ struct RCNodeBuilder {
     template <typename... Args>
     RCNodeBuilder(Args&&... args) : payload_builder(std::forward<Args>(args)...) {}
 
-    template <typename... Args>
-        requires(ConcreteSTN<ResolveNodeType<Payload, SharedPtrIndirection, true, Args...>>)
-    RCExpr<Payload> operator()(Args&&... args) {
-        return make_shared<ResolveNodeType<Payload, SharedPtrIndirection, true, Args...>>(
-            payload_builder(std::forward<Args>(args)...), std::forward<Args>(args)...
-        );
-    }
+    // template <typename... Args>
+    //     requires(ConcreteSTN<ResolveNodeType<Payload, SharedPtrIndirection, true, Args...>>)
+    // RCExpr<Payload> operator()(Args&&... args) {
+    //     return make_shared<ResolveNodeType<Payload, SharedPtrIndirection, true, Args...>>(
+    //         payload_builder(std::forward<Args>(args)...), std::forward<Args>(args)...
+    //     );
+    // }
 };
 
 } // namespace loxxy

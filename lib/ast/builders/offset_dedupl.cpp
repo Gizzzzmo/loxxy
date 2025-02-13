@@ -1,8 +1,11 @@
 module;
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <cxxabi.h>
 #include <iostream>
 #include <loxxy/ast.hpp>
+#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -16,6 +19,21 @@ import utils.stupid_type_traits;
 import utils.multi_vector;
 
 using utils::multi_vector;
+
+auto demangle(const char* name) -> std::string {
+
+    int status = -4; // some arbitrary value to eliminate the compiler warning
+
+    // enable c++11 by passing the flag -std=c++11 to g++
+    std::unique_ptr<char, void (*)(void*)> res{abi::__cxa_demangle(name, nullptr, nullptr, &status), std::free};
+
+    return (status == 0) ? res.get() : name;
+}
+
+template <typename... Ts>
+void for_types(auto&& f) {
+    (f.template operator()<Ts>(), ...);
+}
 
 export namespace loxxy {
 
@@ -34,14 +52,24 @@ struct OffsetDeduplBuilder {
 
     template <typename NodeType, typename... Args>
     auto operator()(marker<NodeType>, Args&&... args) {
+        // for_types<
+        //     BinaryExpr, UnaryExpr, GroupingExpr, StringExpr, NumberExpr, BoolExpr, NilExpr, VarExpr, AssignExpr,
+        //     CallExpr, PrintStmt, ExpressionStmt, VarDecl, FunDecl, BlockStmt, IfStmt, WhileStmt, ReturnStmt>(
+        //     [&nodes = this->nodes]<typename T>() {
+        //         auto& vector = nodes.template get_vec<T>();
+        //         std::cout << "  " << &vector << " " << sizeof(decltype(vector)) << " "
+        //                   << demangle(typeid(decltype(vector)).name()) << std::endl;
+        //     }
+        // );
         auto& vector = nodes.template get_vec<NodeType>();
-        Payload hash = payload_builder(std::forward<Args>(args)...);
+
+        Payload hash = payload_builder(mark<NodeType>, args...);
+
         const auto& it = hash_map.find(hash);
         if (it != hash_map.end())
             return offset_pointer<NodeType, offset_t>(it->second);
 
         vector.emplace_back(hash, std::forward<Args>(args)...);
-
         hash_map[hash] = vector.size() - 1;
 
         return offset_pointer<NodeType, offset_t>(vector.size() - 1);
@@ -52,7 +80,7 @@ struct OffsetDeduplBuilder {
 private:
     Resolver nodes;
 
-    Builder payload_builder;
+    Builder payload_builder{nodes};
     std::unordered_map<Payload, offset_t> hash_map;
 };
 
