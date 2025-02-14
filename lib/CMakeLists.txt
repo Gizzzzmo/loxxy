@@ -81,7 +81,6 @@ target_link_libraries(
 add_cxx_module(lexer lexer.cpp)
 target_link_libraries(lexer PRIVATE string_store ast tsl::hat_trie)
 
-add_cxx_module(parser parser/parser.cpp)
 add_cxx_module(rd_parser parser/rd.cpp)
 target_link_libraries(
   rd_parser PRIVATE parser ast_printer ast stupid_type_traits
