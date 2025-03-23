@@ -10,6 +10,7 @@ option(LOXXY_STD_VARIANT
 
 # external dependencies
 find_package(GTest)
+find_package(LLVM)
 if(NOT LOXXY_STD_VARIANT)
   add_subdirectory(variant)
 endif()

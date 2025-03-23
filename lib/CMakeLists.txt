@@ -54,6 +54,10 @@ target_link_libraries(ast_hasher PRIVATE stupid_type_traits ast variant)
 add_cxx_module(ast_interpreter ast/visitors/interpreter.cpp)
 target_link_libraries(ast_interpreter PRIVATE tsl::hat_trie stupid_type_traits
                                               ast variant)
+add_cxx_module(ast_llvm ast/visitors/llvm.cpp)
+target_link_libraries(ast_llvm PRIVATE stupid_type_traits ast variant LLVMCore LLVMPasses)
+# get_property(importTargetsAfter DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+# message(STATUS ${importTargetsAfter} "asds")
 
 add_cxx_module(ast_printer ast/visitors/printer.cpp)
 target_link_libraries(ast_printer PRIVATE stupid_type_traits ast variant)
@@ -82,9 +86,8 @@ add_cxx_module(lexer lexer.cpp)
 target_link_libraries(lexer PRIVATE string_store ast tsl::hat_trie)
 
 add_cxx_module(rd_parser parser/rd.cpp)
-target_link_libraries(
-  rd_parser PRIVATE parser ast_printer ast stupid_type_traits
-                    ast_boxed_node_builder)
+target_link_libraries(rd_parser PRIVATE ast_printer ast stupid_type_traits
+                                        ast_boxed_node_builder)
 
 add_cxx_module(lr_parser parser/lr.cpp)
 

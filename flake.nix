@@ -9,7 +9,7 @@
     # E.g.
     #
     # nixpkgs.url = "github:NixOS/nixpkgs/unstable";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     utils.url = "github:numtide/flake-utils";
   };
@@ -77,12 +77,13 @@
         ninja
         llvmPackages_19.clang-tools
         llvmPackages_19.bintools
+        llvmPackages_19.lldb
         # Development time dependencies
         gtest
       ];
 
       buildInputs = with pkgs; [
-        
+        libllvm        
       ];
 
       # Setting up the environment variables you need during
