@@ -37,7 +37,7 @@ struct CompileTimeInit {
     byte* bang_equal;
 };
 
-static CompileTimeInit getInitialIdStore() {
+static auto getInitialIdStore() -> CompileTimeInit {
     CompileTimeInit init;
 
     byte* ptr = init.lex_store.begin();
@@ -147,7 +147,7 @@ public:
         initStoreAndTable();
     }
 
-    const persistent_string<>* addBuiltin(std::string_view sv) {
+    auto addBuiltin(std::string_view sv) -> const persistent_string<>* {
         lex_store.reset_recording();
         lex_store.recordString(sv);
         const persistent_string<>* ptr = lex_store.finish_recording();
@@ -156,7 +156,7 @@ public:
         return ptr;
     }
 
-    bool scanTokens() {
+    auto scanTokens() -> bool {
         done = false;
 
         while (!file.eof() && !file.fail() && !done) {
@@ -169,7 +169,7 @@ public:
         return hadError;
     }
 
-    bool scanTokensLine() {
+    auto scanTokensLine() -> bool {
 
         int last_line = line;
         while (!file.eof() && !file.fail() && !done) {
@@ -191,7 +191,7 @@ private:
         const size_t incr = 1 << init.id_space_exponent;
 
         for (size_t i = 0; i < init.n_ids; i++) {
-            persistent_string<char>* str_ptr = reinterpret_cast<persistent_string<char>*>(&init.start_ids[i * incr]);
+            auto* str_ptr = reinterpret_cast<persistent_string<char>*>(&init.start_ids[i * incr]);
             table.insert(*str_ptr, str_ptr);
         }
         lex_store.start_recording();
@@ -202,7 +202,7 @@ private:
                   << "Error: " << message << std::endl;
         hadError = true;
     }
-    bool match(char c) {
+    auto match(char c) -> bool {
         if (file.peek() != c || file.eof())
             return false;
         file.get();
@@ -212,19 +212,19 @@ private:
         sink.emplace(Token(type, lexeme, literal, line, column));
     }
 
-    static bool isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+    static auto isAlpha(char c) -> bool { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
 
-    static bool isDigit(char c) { return c >= '0' && c <= '9'; }
+    static auto isDigit(char c) -> bool { return c >= '0' && c <= '9'; }
 
-    static bool isHexDigit(char c) { return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+    static auto isHexDigit(char c) -> bool { return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
 
-    static bool isOctDigit(char c) { return c >= '0' && c <= '7'; }
+    static auto isOctDigit(char c) -> bool { return c >= '0' && c <= '7'; }
 
-    static bool isBinDigit(char c) { return c == '0' || c == '1'; }
+    static auto isBinDigit(char c) -> bool { return c == '0' || c == '1'; }
 
-    static bool isAlphaNumeric(char c) { return isAlpha(c) || isDigit(c); }
+    static auto isAlphaNumeric(char c) -> bool { return isAlpha(c) || isDigit(c); }
 
-    static double parseNumber(LiteralFormat format, std::string_view str) {
+    static auto parseNumber(LiteralFormat format, std::string_view str) -> double {
         double base;
         switch (format) {
         case DEC:
@@ -268,7 +268,7 @@ private:
         return d;
     }
 
-    const persistent_string<char>* addToTableIfNotExists(const persistent_string<char>* str) {
+    auto addToTableIfNotExists(const persistent_string<char>* str) -> const persistent_string<char>* {
         auto it = table.find(*str);
         if (it != table.end())
             return it.value();
@@ -277,7 +277,7 @@ private:
         return str;
     }
 
-    const persistent_string<char>* resolveStringStoreRecording() {
+    auto resolveStringStoreRecording() -> const persistent_string<char>* {
         const persistent_string<char>* str = string_store.peek_recording();
         const persistent_string<char>* str_resolved = addToTableIfNotExists(str);
         if (str == str_resolved) {
@@ -289,7 +289,7 @@ private:
         return str_resolved;
     }
 
-    const persistent_string<char>* resolveLexStoreRecording() {
+    auto resolveLexStoreRecording() -> const persistent_string<char>* {
         const persistent_string<char>* lexeme = lex_store.peek_recording();
         const persistent_string<char>* lexeme_resolved = addToTableIfNotExists(lexeme);
         if (lexeme == lexeme_resolved) {
@@ -381,7 +381,7 @@ private:
         addToken(NUMBER, lexeme, literal);
     }
 
-    char escapeSequence() {
+    auto escapeSequence() -> char {
         lex_store.recordChar('\\');
         char c = file.get();
         lex_store.recordChar(c);
