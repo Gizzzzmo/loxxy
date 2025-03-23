@@ -41,11 +41,16 @@ struct WrongNumberOfArguments : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+}; // namespace loxxy
+
+using loxxy::TypeError;
+using loxxy::Value;
+
 struct Equals {
-    auto operator()(const LoxCallable& lhs, const LoxCallable& rhs) -> bool {
+    auto operator()(const loxxy::LoxCallable& lhs, const loxxy::LoxCallable& rhs) -> bool {
         return lhs.function_body == rhs.function_body;
     }
-    auto operator()(const BuiltinCallable* lhs, const BuiltinCallable* rhs) -> bool { return lhs == rhs; }
+    auto operator()(const loxxy::BuiltinCallable* lhs, const loxxy::BuiltinCallable* rhs) -> bool { return lhs == rhs; }
     auto operator()(nullptr_t, nullptr_t) -> bool { return true; }
     auto operator()(bool lhs, bool rhs) -> bool { return lhs == rhs; }
     auto operator()(double lhs, double rhs) -> bool { return lhs == rhs; }
@@ -107,6 +112,8 @@ struct Minus {
     auto operator()(auto&&, auto&&) -> double { throw TypeError("bad operands for subtraction"); }
     auto operator()(auto&&) -> double { throw TypeError("bad operand for negation"); }
 };
+
+export namespace loxxy {
 
 struct ValuePrinter {
     std::ostream& ostream;
