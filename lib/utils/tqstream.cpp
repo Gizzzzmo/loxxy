@@ -3,7 +3,6 @@ module;
 #include "rigtorp/SPSCQueue.h"
 #include <cassert>
 #include <chrono>
-#include <iostream>
 #include <thread>
 
 export module utils.tqstream;
@@ -18,7 +17,7 @@ public:
     )
         : buffer_size_in(buffer_size_in), queue(n), flush_pred(flush_pred) {}
 
-    T get() {
+    auto get() -> T {
         T* ptr;
         while ((ptr = queue.front()) == nullptr)
             std::this_thread::sleep_for(std::chrono::microseconds(250));
@@ -29,7 +28,7 @@ public:
         return el;
     }
 
-    const T& peek() {
+    auto peek() -> const T& {
         T* ptr;
         while ((ptr = queue.front()) == nullptr)
             std::this_thread::sleep_for(std::chrono::microseconds(250));

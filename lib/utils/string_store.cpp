@@ -24,23 +24,24 @@ template <typename char_t = char>
 class persistent_string {
 private:
     persistent_string(size_tt len) : len(len) {};
+
+public:
     persistent_string(const persistent_string&) = delete;
     persistent_string(persistent_string&&) = delete;
 
-public:
     static auto allocate_new(size_tt capacity) {
-        std::byte* memory = new (std::align_val_t{alignof(persistent_string<char_t>)})
+        auto* memory = new (std::align_val_t{alignof(persistent_string<char_t>)})
             std::byte[sizeof(persistent_string<char_t>) + capacity * sizeof(char_t)];
 
         return std::unique_ptr<persistent_string<char_t>>(construct_at(memory));
     }
-    static persistent_string<char_t>* construct_at(void* ptr) {
+
+    static auto construct_at(void* ptr) -> persistent_string<char_t>* {
         static_assert(std::is_trivially_destructible_v<persistent_string<char_t>> == std::is_trivially_destructible_v<char_t>);
         return new (ptr) persistent_string<char_t>{0};
     }
-    persistent_string<char_t>* copy_to(void* ptr)
-        requires(std::is_copy_constructible_v<char_t>)
-    {
+
+    auto copy_to(void* ptr) -> persistent_string<char_t>* requires(std::is_copy_constructible_v<char_t>) {
         persistent_string<char_t>* str = construct_at(ptr);
         str->len = len;
         if constexpr (std::is_trivially_copyable_v<char_t>)
@@ -52,9 +53,8 @@ public:
         }
         return str;
     }
-    persistent_string<char_t>* move_to(void* ptr)
-        requires(std::is_move_constructible_v<char_t>)
-    {
+
+    auto move_to(void* ptr) -> persistent_string<char_t>* requires(std::is_move_constructible_v<char_t>) {
         persistent_string<char_t>* str = construct_at(ptr);
         str->len = len;
         if constexpr (std::is_trivially_move_constructible_v<char_t>)
@@ -88,9 +88,9 @@ public:
     = default;
 
     operator std::basic_string_view<char_t>() const { return std::basic_string_view<char_t>(chars, len); }
-    size_t byte_size() const { return sizeof(persistent_string<char_t>) + len * sizeof(char_t); }
+    [[nodiscard]] auto byte_size() const -> size_t { return sizeof(persistent_string<char_t>) + len * sizeof(char_t); }
 
-    friend std::ostream& operator<<(std::ostream& ostream, const persistent_string<char_t>& string) {
+    friend auto operator<<(std::ostream& ostream, const persistent_string<char_t>& string) -> std::ostream& {
         ostream << std::basic_string_view<char_t>(string);
         return ostream;
     }
@@ -121,7 +121,7 @@ public:
             : container(container), byte_size(chunk_index), chunk_index(std::numeric_limits<size_tt>::max()) {}
 
     public:
-        string_store_iterator& operator++() {
+        auto operator++() -> string_store_iterator& {
             if (is_end())
                 return *this;
 
@@ -154,9 +154,9 @@ public:
             return *this;
         }
 
-        const persistent_string<char_t>& operator*() const { return *string; }
+        auto operator*() const -> const persistent_string<char_t>& { return *string; }
 
-        bool operator==(const string_store_iterator& other) const {
+        auto operator==(const string_store_iterator& other) const -> bool {
             if (&container != &other.container)
                 return false;
 
@@ -166,17 +166,18 @@ public:
             return string == other.string && chunk_index == other.chunk_index;
         }
 
-        bool operator!=(const string_store_iterator& other) const { return !(*this == other); }
+        auto operator!=(const string_store_iterator& other) const -> bool { return !(*this == other); }
 
     private:
-        bool is_end() const { return chunk_index == std::numeric_limits<size_tt>::max(); }
+        [[nodiscard]] auto is_end() const -> bool { return chunk_index == std::numeric_limits<size_tt>::max(); }
         const std::vector<std::byte*>& container;
         const persistent_string<char_t>* string;
         const size_tt& byte_size;
         size_tt chunk_index;
     };
 
-    persistent_string_store() {}
+    persistent_string_store() = default;
+
     ~persistent_string_store() {
         if constexpr (!std::is_trivially_destructible_v<persistent_string<char_t>>) {
             for (const persistent_string<char_t>& string : *this) {
@@ -189,7 +190,7 @@ public:
         }
     }
 
-    bool start_recording(size_tt min_num_chars = 0) {
+    auto start_recording(size_tt min_num_chars = 0) -> bool {
         if (recording_string)
             return false;
         recording_string = true;
@@ -227,12 +228,12 @@ public:
         return true;
     }
 
-    const persistent_string<char_t>* finish_recording() {
+    auto finish_recording() -> const persistent_string<char_t>* {
         recording_string = false;
         return current_recording;
     }
 
-    const persistent_string<char_t>* peek_recording() const { return current_recording; }
+    [[nodiscard]] auto peek_recording() const -> const persistent_string<char_t>* { return current_recording; }
 
     void reset_recording() {
         if (!recording_string)
@@ -244,11 +245,11 @@ public:
         return;
     }
 
-    bool recordChar(param_char_t c) {
+    auto recordChar(param_char_t c) -> bool {
         if (!recording_string)
             return false;
 
-        while (sizeof(char_t) > capacity_bytes - size_bytes)
+        if (sizeof(char_t) > capacity_bytes - size_bytes)
             allocate_and_move_current(1);
 
         new (&current_recording->chars[current_recording->len]) char_t(c);
@@ -263,7 +264,7 @@ public:
         return true;
     }
 
-    bool recordChar(char_t&& c)
+    auto recordChar(char_t&& c) -> bool
         requires(!std::same_as<char_t, param_char_t>)
     {
         if (!recording_string)
@@ -283,7 +284,7 @@ public:
         return true;
     }
 
-    bool recordString(const std::basic_string_view<char_t>& string) {
+    auto recordString(const std::basic_string_view<char_t>& string) -> bool {
         if (!recording_string)
             return false;
 
@@ -312,7 +313,7 @@ public:
     }
 
     template <typename... Args>
-    bool emplaceChar(Args&&... args) {
+    auto emplaceChar(Args&&... args) -> bool {
         if (!recording_string)
             return false;
 
@@ -330,14 +331,14 @@ public:
         return true;
     }
 
-    string_store_iterator cbegin() const {
+    auto cbegin() const -> string_store_iterator {
         if (size_bytes == 0)
             return string_store_iterator(memory);
 
         return string_store_iterator(memory, size_bytes);
     }
 
-    string_store_iterator cend() const { return string_store_iterator(memory); }
+    auto cend() const -> string_store_iterator { return string_store_iterator(memory); }
 
     auto begin() const { return cbegin(); }
 
@@ -357,6 +358,7 @@ private:
         memory.push_back(new (std::align_val_t{alignof(persistent_string<char_t>)}
         ) std::byte[capacity_bytes + sizeof(persistent_string<char_t>) + alignof(persistent_string<char_t>)]);
     }
+
     void allocate_and_move_current(size_t min_num_chars) {
         min_num_chars += current_recording->len;
         std::byte* chunk_to_remove = nullptr;
