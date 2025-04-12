@@ -81,7 +81,7 @@ struct ComposedIndirection<> {
     template <typename T>
     using type = T;
     template <typename T>
-    static constexpr T get(T&& t) {
+    static constexpr auto get(T&& t) -> T {
         return std::forward<T>(t);
     }
 };
@@ -93,7 +93,7 @@ struct ComposedIndirection<Fn1, Fns...> {
     using type = typename Fn1::template type<typename ComposedIndirection<Fns...>::template type<T>>;
 
     template <typename T>
-    static constexpr T get(const type<T>& mapped) {
+    static constexpr auto get(const type<T>& mapped) -> T {
         return Tail::template get<T>(Fn1::template get<typename Tail::template type<T>>());
     }
 };
@@ -104,7 +104,7 @@ struct ConstIndirection {
     template <typename T>
     using type = const T;
     template <typename T>
-    static constexpr T& get(const T& t) {
+    static constexpr auto get(const T& t) -> T& {
         return const_cast<T&>(t);
     }
 };
@@ -113,7 +113,7 @@ struct UniquePtrIndirection {
     template <typename T>
     using type = std::unique_ptr<T>;
     template <typename T>
-    static constexpr T& get(const std::unique_ptr<T>& ptr) {
+    static constexpr auto get(const std::unique_ptr<T>& ptr) -> T& {
         return *ptr;
     }
 };
@@ -127,7 +127,7 @@ struct PropConstIndirection {
         std::is_const_v<T>, const std::experimental::propagate_const<PointerLike<std::remove_const_t<T>>>,
         std::experimental::propagate_const<PointerLike<T>>>;
     template <typename T>
-    static constexpr T& get(type<T>& ptr) {
+    static constexpr auto get(type<T>& ptr) -> T& {
         return *ptr;
     }
 };
@@ -136,7 +136,7 @@ struct PointerIndirection {
     template <typename T>
     using type = T*;
     template <typename T>
-    static constexpr T& get(T* ptr) {
+    static constexpr auto get(T* ptr) -> T& {
         return *ptr;
     }
 };
@@ -145,7 +145,7 @@ struct SharedPtrIndirection {
     template <typename T>
     using type = std::shared_ptr<T>;
     template <typename T>
-    static constexpr T& get(const std::shared_ptr<T> ptr) {
+    static constexpr auto get(const std::shared_ptr<T> ptr) -> T& {
         return *ptr;
     }
 };
@@ -163,7 +163,7 @@ struct OffsetPointerIndirection {
     template <typename T>
     using type = offset_pointer<T, offset_t>;
     template <typename T, SubscriptableWith<type<T>, T> Res>
-    static constexpr decltype(auto) get(type<T> ptr, Res& res) {
+    static constexpr auto get(type<T> ptr, Res& res) -> decltype(auto) {
         return res[ptr];
     }
 };
@@ -172,7 +172,7 @@ struct ReferenceIndirection {
     template <typename T>
     using type = T&;
     template <typename T>
-    static constexpr T& get(type<T> t) {
+    static constexpr auto get(type<T> t) -> T& {
         return t;
     }
 };
@@ -181,7 +181,7 @@ struct WrappedRefIndirection {
     template <typename T>
     using type = std::reference_wrapper<T>;
     template <typename T>
-    static constexpr T& get(type<T> t) {
+    static constexpr auto get(type<T> t) -> T& {
         return t.get();
     }
 };
